@@ -1,0 +1,2662 @@
+{
+  "schema_version": 2,
+  "env": {
+    "timestamp": "2026-09-27 21:39:26 +0200",
+    "kernel": "Linux 7.0.0-31-generic",
+    "cpus": 8,
+    "docker_cmd": "/snap/bin/docker",
+    "docker": {
+      "server_version": "29.8.0",
+      "storage_driver": "overlayfs",
+      "cgroup_driver": "systemd",
+      "cgroup_version": "2",
+      "runtime": "runc",
+      "id": "5ad919ed-9938-474f-bb34-b406bad9ac69",
+      "rootless": "[name=apparmor,profile=default name=seccomp,profile=builtin name=cgroupns]"
+    },
+    "host_mem": {
+      "total": 32567091200,
+      "available": 8072003584,
+      "free": 5921157120,
+      "used": 23369318400,
+      "committed": 63321513984
+    },
+    "have_pss": true,
+    "euid": 0,
+    "boot_id": "4ad29a73-cc1f-41b2-bc76-d723008e8726",
+    "epoch": 1790537966.1426392,
+    "host_used_formula": "MemTotal-MemFree-Buffers-Cached-SReclaimable"
+  },
+  "services": [
+    {
+      "name": "csharp-alpine",
+      "lang": "csharp",
+      "base": "alpine",
+      "container_id": "d8c46224515376474990715f5d055a43442661d7a21994fc380ec38bf174fdf5",
+      "image": "sha256:80f65e28c89b629ab150cefb779f9817c0009f3693682f295b718277e01ff9be",
+      "image_size": 55250873,
+      "port": "8009",
+      "pid": 2981107,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2981107,
+          "rss": 36438016,
+          "comm": "dotnet"
+        }
+      ],
+      "provenance": {
+        "os_release": "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.22.3\nPRETTY_NAME=\"Alpine Linux v3.22\"\nHOME_URL=\"https://alpinelinux.org/\"\nBUG_REPORT_URL=\"https://gitlab.alpinelinux.org/alpine/aports/-/issues\"",
+        "runtime_version": "Microsoft.AspNetCore.App 10.0.3 [/usr/share/dotnet/shared/Microsoft.AspNetCore.App]\nMicrosoft.NETCore.App 10.0.3 [/usr/share/dotnet/shared/Microsoft.NETCore.App]",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:80f65e28c89b629ab150cefb779f9817c0009f3693682f295b718277e01ff9be",
+        "repo_digests": [
+          "memtest/csharp-alpine@sha256:80f65e28c89b629ab150cefb779f9817c0009f3693682f295b718277e01ff9be"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:31.949012758Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-d8c46224515376474990715f5d055a43442661d7a21994fc380ec38bf174fdf5.scope",
+        "current": 37707776,
+        "peak": 51453952,
+        "anon": 10186752,
+        "file": 25198592,
+        "inactive_file": 196608,
+        "kernel": 1839104,
+        "slab": 1018920,
+        "sock": 0,
+        "pagetables": 417792,
+        "kernel_stack": 376832,
+        "swap": 0,
+        "pids": 23
+      },
+      "working_set": 37511168,
+      "host_tax": 6736896,
+      "total": 44248064,
+      "host_procs": [
+        {
+          "pid": 2981083,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9437184,
+          "pss": 4307968,
+          "private": 3739648,
+          "swap": 0,
+          "container": "csharp-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9437184,
+              "pss": 4307968,
+              "private": 3739648,
+              "swap": 0
+            },
+            {
+              "rss": 9437184,
+              "pss": 4307968,
+              "private": 3739648,
+              "swap": 0
+            },
+            {
+              "rss": 9437184,
+              "pss": 4307968,
+              "private": 3739648,
+              "swap": 0
+            },
+            {
+              "rss": 9437184,
+              "pss": 4307968,
+              "private": 3739648,
+              "swap": 0
+            },
+            {
+              "rss": 9437184,
+              "pss": 4307968,
+              "private": 3739648,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2981315,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4132864,
+          "pss": 2428928,
+          "private": 2215936,
+          "swap": 0,
+          "container": "csharp-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4132864,
+              "pss": 2428928,
+              "private": 2215936,
+              "swap": 0
+            },
+            {
+              "rss": 4132864,
+              "pss": 2428928,
+              "private": 2215936,
+              "swap": 0
+            },
+            {
+              "rss": 4132864,
+              "pss": 2428928,
+              "private": 2215936,
+              "swap": 0
+            },
+            {
+              "rss": 4132864,
+              "pss": 2428928,
+              "private": 2215936,
+              "swap": 0
+            },
+            {
+              "rss": 4132864,
+              "pss": 2428928,
+              "private": 2215936,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "csharp-ubuntu",
+      "lang": "csharp",
+      "base": "ubuntu",
+      "container_id": "1b8f118f45bb67d2048f92ba84b50bdd764dd0c07f97e5fc0f4d1bfa4042df32",
+      "image": "sha256:11ec15c0ad1859b5a80952972ae00fa2da5cbd20bd2e4dc2813efbf01ac96edd",
+      "image_size": 117589661,
+      "port": "8010",
+      "pid": 2980852,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2980852,
+          "rss": 43253760,
+          "comm": "dotnet"
+        }
+      ],
+      "provenance": {
+        "os_release": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo",
+        "runtime_version": "Microsoft.AspNetCore.App 10.0.12 [/usr/share/dotnet/shared/Microsoft.AspNetCore.App]\nMicrosoft.NETCore.App 10.0.12 [/usr/share/dotnet/shared/Microsoft.NETCore.App]",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:11ec15c0ad1859b5a80952972ae00fa2da5cbd20bd2e4dc2813efbf01ac96edd",
+        "repo_digests": [
+          "memtest/csharp-ubuntu@sha256:11ec15c0ad1859b5a80952972ae00fa2da5cbd20bd2e4dc2813efbf01ac96edd"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:31.374344806Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-1b8f118f45bb67d2048f92ba84b50bdd764dd0c07f97e5fc0f4d1bfa4042df32.scope",
+        "current": 44052480,
+        "peak": 50708480,
+        "anon": 16564224,
+        "file": 25509888,
+        "inactive_file": 24576,
+        "kernel": 1978368,
+        "slab": 1025504,
+        "sock": 0,
+        "pagetables": 532480,
+        "kernel_stack": 393216,
+        "swap": 0,
+        "pids": 24
+      },
+      "working_set": 44027904,
+      "host_tax": 6693888,
+      "total": 50721792,
+      "host_procs": [
+        {
+          "pid": 2980827,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9408512,
+          "pss": 4279296,
+          "private": 3710976,
+          "swap": 0,
+          "container": "csharp-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9408512,
+              "pss": 4279296,
+              "private": 3710976,
+              "swap": 0
+            },
+            {
+              "rss": 9408512,
+              "pss": 4279296,
+              "private": 3710976,
+              "swap": 0
+            },
+            {
+              "rss": 9408512,
+              "pss": 4279296,
+              "private": 3710976,
+              "swap": 0
+            },
+            {
+              "rss": 9408512,
+              "pss": 4279296,
+              "private": 3710976,
+              "swap": 0
+            },
+            {
+              "rss": 9408512,
+              "pss": 4279296,
+              "private": 3710976,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2981050,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4173824,
+          "pss": 2414592,
+          "private": 2195456,
+          "swap": 0,
+          "container": "csharp-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4173824,
+              "pss": 2414592,
+              "private": 2195456,
+              "swap": 0
+            },
+            {
+              "rss": 4173824,
+              "pss": 2414592,
+              "private": 2195456,
+              "swap": 0
+            },
+            {
+              "rss": 4173824,
+              "pss": 2414592,
+              "private": 2195456,
+              "swap": 0
+            },
+            {
+              "rss": 4173824,
+              "pss": 2414592,
+              "private": 2195456,
+              "swap": 0
+            },
+            {
+              "rss": 4173824,
+              "pss": 2414592,
+              "private": 2195456,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "go-alpine",
+      "lang": "go",
+      "base": "alpine",
+      "container_id": "b23023bc849ec973dd443e5178f2abd723a54ee854a90ef0ae5d4350a51e1b7a",
+      "image": "sha256:2e9499fba442a7ad0e6150f325779be443d9886c847fe83e45946990ea4183bf",
+      "image_size": 6794732,
+      "port": "8003",
+      "pid": 2982139,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2982139,
+          "rss": 4325376,
+          "comm": "hello"
+        }
+      ],
+      "provenance": {
+        "os_release": "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.22.6\nPRETTY_NAME=\"Alpine Linux v3.22\"\nHOME_URL=\"https://alpinelinux.org/\"\nBUG_REPORT_URL=\"https://gitlab.alpinelinux.org/alpine/aports/-/issues\"",
+        "runtime_version": "compiler version not collected",
+        "binary_sha256": "6b289ec0b236b413488711db776bede09e8ecf6e50732b2a2d1350ea87b0084a",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:2e9499fba442a7ad0e6150f325779be443d9886c847fe83e45946990ea4183bf",
+        "repo_digests": [
+          "memtest/go-alpine@sha256:2e9499fba442a7ad0e6150f325779be443d9886c847fe83e45946990ea4183bf"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:33.581921355Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-b23023bc849ec973dd443e5178f2abd723a54ee854a90ef0ae5d4350a51e1b7a.scope",
+        "current": 4845568,
+        "peak": 6860800,
+        "anon": 3219456,
+        "file": 1097728,
+        "inactive_file": 53248,
+        "kernel": 528384,
+        "slab": 298864,
+        "sock": 0,
+        "pagetables": 106496,
+        "kernel_stack": 98304,
+        "swap": 0,
+        "pids": 6
+      },
+      "working_set": 4792320,
+      "host_tax": 6819840,
+      "total": 11612160,
+      "host_procs": [
+        {
+          "pid": 2982115,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9605120,
+          "pss": 4441088,
+          "private": 3862528,
+          "swap": 0,
+          "container": "go-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9605120,
+              "pss": 4441088,
+              "private": 3862528,
+              "swap": 0
+            },
+            {
+              "rss": 9605120,
+              "pss": 4441088,
+              "private": 3862528,
+              "swap": 0
+            },
+            {
+              "rss": 9605120,
+              "pss": 4441088,
+              "private": 3862528,
+              "swap": 0
+            },
+            {
+              "rss": 9605120,
+              "pss": 4441088,
+              "private": 3862528,
+              "swap": 0
+            },
+            {
+              "rss": 9605120,
+              "pss": 4441088,
+              "private": 3862528,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2982338,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4046848,
+          "pss": 2378752,
+          "private": 2174976,
+          "swap": 0,
+          "container": "go-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4046848,
+              "pss": 2378752,
+              "private": 2174976,
+              "swap": 0
+            },
+            {
+              "rss": 4046848,
+              "pss": 2378752,
+              "private": 2174976,
+              "swap": 0
+            },
+            {
+              "rss": 4046848,
+              "pss": 2378752,
+              "private": 2174976,
+              "swap": 0
+            },
+            {
+              "rss": 4046848,
+              "pss": 2378752,
+              "private": 2174976,
+              "swap": 0
+            },
+            {
+              "rss": 4046848,
+              "pss": 2378752,
+              "private": 2174976,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "go-ubuntu",
+      "lang": "go",
+      "base": "ubuntu",
+      "container_id": "c87b89569ca77c4c10bc5cd7ac75a3f16d9b292ad76c728cc14395e30cd72436",
+      "image": "sha256:7224bc3c1c14f0c5602ea456e8871a79a50ec3d2b2d87a3724b690ac6784fd2d",
+      "image_size": 50685090,
+      "port": "8004",
+      "pid": 2980338,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2980338,
+          "rss": 4079616,
+          "comm": "hello"
+        }
+      ],
+      "provenance": {
+        "os_release": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo",
+        "runtime_version": "compiler version not collected",
+        "binary_sha256": "6b289ec0b236b413488711db776bede09e8ecf6e50732b2a2d1350ea87b0084a",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:7224bc3c1c14f0c5602ea456e8871a79a50ec3d2b2d87a3724b690ac6784fd2d",
+        "repo_digests": [
+          "memtest/go-ubuntu@sha256:7224bc3c1c14f0c5602ea456e8871a79a50ec3d2b2d87a3724b690ac6784fd2d"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:30.551511582Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-c87b89569ca77c4c10bc5cd7ac75a3f16d9b292ad76c728cc14395e30cd72436.scope",
+        "current": 4583424,
+        "peak": 6721536,
+        "anon": 3047424,
+        "file": 1036288,
+        "inactive_file": 20480,
+        "kernel": 499712,
+        "slab": 286760,
+        "sock": 0,
+        "pagetables": 106496,
+        "kernel_stack": 81920,
+        "swap": 0,
+        "pids": 5
+      },
+      "working_set": 4562944,
+      "host_tax": 6729728,
+      "total": 11292672,
+      "host_procs": [
+        {
+          "pid": 2980315,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9396224,
+          "pss": 4267008,
+          "private": 3698688,
+          "swap": 0,
+          "container": "go-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9396224,
+              "pss": 4267008,
+              "private": 3698688,
+              "swap": 0
+            },
+            {
+              "rss": 9396224,
+              "pss": 4267008,
+              "private": 3698688,
+              "swap": 0
+            },
+            {
+              "rss": 9396224,
+              "pss": 4267008,
+              "private": 3698688,
+              "swap": 0
+            },
+            {
+              "rss": 9396224,
+              "pss": 4267008,
+              "private": 3698688,
+              "swap": 0
+            },
+            {
+              "rss": 9396224,
+              "pss": 4267008,
+              "private": 3698688,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2980554,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4210688,
+          "pss": 2462720,
+          "private": 2248704,
+          "swap": 0,
+          "container": "go-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4210688,
+              "pss": 2462720,
+              "private": 2248704,
+              "swap": 0
+            },
+            {
+              "rss": 4210688,
+              "pss": 2462720,
+              "private": 2248704,
+              "swap": 0
+            },
+            {
+              "rss": 4210688,
+              "pss": 2462720,
+              "private": 2248704,
+              "swap": 0
+            },
+            {
+              "rss": 4210688,
+              "pss": 2462720,
+              "private": 2248704,
+              "swap": 0
+            },
+            {
+              "rss": 4210688,
+              "pss": 2462720,
+              "private": 2248704,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "python-alpine",
+      "lang": "python",
+      "base": "alpine",
+      "container_id": "723774bbaf6dc0c99c645f11502abfc43ef51d0bef04b3d5fe6f8a4a4c305247",
+      "image": "sha256:c6a08b4743bee66d7e1cc13c8b495fddaa4677c1d1cd8f1ea76ac5bb0727c508",
+      "image_size": 21009495,
+      "port": "8005",
+      "pid": 2982640,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2982640,
+          "rss": 12570624,
+          "comm": "python3"
+        }
+      ],
+      "provenance": {
+        "os_release": "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.22.4\nPRETTY_NAME=\"Alpine Linux v3.22\"\nHOME_URL=\"https://alpinelinux.org/\"\nBUG_REPORT_URL=\"https://gitlab.alpinelinux.org/alpine/aports/-/issues\"",
+        "runtime_version": "Python 3.14.5",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:c6a08b4743bee66d7e1cc13c8b495fddaa4677c1d1cd8f1ea76ac5bb0727c508",
+        "repo_digests": [
+          "memtest/python-alpine@sha256:c6a08b4743bee66d7e1cc13c8b495fddaa4677c1d1cd8f1ea76ac5bb0727c508"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:34.682207477Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-723774bbaf6dc0c99c645f11502abfc43ef51d0bef04b3d5fe6f8a4a4c305247.scope",
+        "current": 12980224,
+        "peak": 20684800,
+        "anon": 10915840,
+        "file": 1617920,
+        "inactive_file": 24576,
+        "kernel": 446464,
+        "slab": 307000,
+        "sock": 0,
+        "pagetables": 98304,
+        "kernel_stack": 16384,
+        "swap": 0,
+        "pids": 1
+      },
+      "working_set": 12955648,
+      "host_tax": 6940672,
+      "total": 19896320,
+      "host_procs": [
+        {
+          "pid": 2982617,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9482240,
+          "pss": 4353024,
+          "private": 3784704,
+          "swap": 0,
+          "container": "python-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9482240,
+              "pss": 4353024,
+              "private": 3784704,
+              "swap": 0
+            },
+            {
+              "rss": 9482240,
+              "pss": 4353024,
+              "private": 3784704,
+              "swap": 0
+            },
+            {
+              "rss": 9482240,
+              "pss": 4353024,
+              "private": 3784704,
+              "swap": 0
+            },
+            {
+              "rss": 9482240,
+              "pss": 4353024,
+              "private": 3784704,
+              "swap": 0
+            },
+            {
+              "rss": 9482240,
+              "pss": 4353024,
+              "private": 3784704,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2982841,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4349952,
+          "pss": 2587648,
+          "private": 2371584,
+          "swap": 0,
+          "container": "python-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4349952,
+              "pss": 2587648,
+              "private": 2371584,
+              "swap": 0
+            },
+            {
+              "rss": 4349952,
+              "pss": 2587648,
+              "private": 2371584,
+              "swap": 0
+            },
+            {
+              "rss": 4349952,
+              "pss": 2587648,
+              "private": 2371584,
+              "swap": 0
+            },
+            {
+              "rss": 4349952,
+              "pss": 2587648,
+              "private": 2371584,
+              "swap": 0
+            },
+            {
+              "rss": 4349952,
+              "pss": 2587648,
+              "private": 2371584,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "python-ubuntu",
+      "lang": "python",
+      "base": "ubuntu",
+      "container_id": "a70abe9c29897f51af68d760f1f4a2d21728987d3eb015a93554ad7610085fe6",
+      "image": "sha256:c1d54d33a9de76014764e6453b8eebb64b4c899861eb33b98e6c6b471497cc3b",
+      "image_size": 64937252,
+      "port": "8006",
+      "pid": 2980602,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2980602,
+          "rss": 11223040,
+          "comm": "python3"
+        }
+      ],
+      "provenance": {
+        "os_release": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo",
+        "runtime_version": "Python 3.14.4",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:c1d54d33a9de76014764e6453b8eebb64b4c899861eb33b98e6c6b471497cc3b",
+        "repo_digests": [
+          "memtest/python-ubuntu@sha256:c1d54d33a9de76014764e6453b8eebb64b4c899861eb33b98e6c6b471497cc3b"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:31.003307536Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-a70abe9c29897f51af68d760f1f4a2d21728987d3eb015a93554ad7610085fe6.scope",
+        "current": 11333632,
+        "peak": 19402752,
+        "anon": 9293824,
+        "file": 1601536,
+        "inactive_file": 1417216,
+        "kernel": 438272,
+        "slab": 290152,
+        "sock": 0,
+        "pagetables": 106496,
+        "kernel_stack": 16384,
+        "swap": 0,
+        "pids": 1
+      },
+      "working_set": 9916416,
+      "host_tax": 6679552,
+      "total": 16595968,
+      "host_procs": [
+        {
+          "pid": 2980579,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9367552,
+          "pss": 4238336,
+          "private": 3670016,
+          "swap": 0,
+          "container": "python-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9367552,
+              "pss": 4238336,
+              "private": 3670016,
+              "swap": 0
+            },
+            {
+              "rss": 9367552,
+              "pss": 4238336,
+              "private": 3670016,
+              "swap": 0
+            },
+            {
+              "rss": 9367552,
+              "pss": 4238336,
+              "private": 3670016,
+              "swap": 0
+            },
+            {
+              "rss": 9367552,
+              "pss": 4238336,
+              "private": 3670016,
+              "swap": 0
+            },
+            {
+              "rss": 9367552,
+              "pss": 4238336,
+              "private": 3670016,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2980804,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4104192,
+          "pss": 2441216,
+          "private": 2252800,
+          "swap": 0,
+          "container": "python-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4104192,
+              "pss": 2441216,
+              "private": 2252800,
+              "swap": 0
+            },
+            {
+              "rss": 4104192,
+              "pss": 2441216,
+              "private": 2252800,
+              "swap": 0
+            },
+            {
+              "rss": 4104192,
+              "pss": 2441216,
+              "private": 2252800,
+              "swap": 0
+            },
+            {
+              "rss": 4104192,
+              "pss": 2441216,
+              "private": 2252800,
+              "swap": 0
+            },
+            {
+              "rss": 4104192,
+              "pss": 2441216,
+              "private": 2252800,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rust-alpine",
+      "lang": "rust",
+      "base": "alpine",
+      "container_id": "037684e6453b5a85dea808f812babea700ee82237fd9890ba07c0244ec17ce90",
+      "image": "sha256:4ab355c997701eedab5211bd26b2aa3f8d665d6621fbb0fe1dbb7c2e847da6c8",
+      "image_size": 4757914,
+      "port": "8001",
+      "pid": 2982386,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2982386,
+          "rss": 602112,
+          "comm": "hello"
+        }
+      ],
+      "provenance": {
+        "os_release": "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.22.6\nPRETTY_NAME=\"Alpine Linux v3.22\"\nHOME_URL=\"https://alpinelinux.org/\"\nBUG_REPORT_URL=\"https://gitlab.alpinelinux.org/alpine/aports/-/issues\"",
+        "runtime_version": "compiler version not collected",
+        "binary_sha256": "6bcd5549031af001cdd3153f65dc0d9d4c269793c6f5d66ad5b6b9210c24bd74",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:4ab355c997701eedab5211bd26b2aa3f8d665d6621fbb0fe1dbb7c2e847da6c8",
+        "repo_digests": [
+          "memtest/rust-alpine@sha256:4ab355c997701eedab5211bd26b2aa3f8d665d6621fbb0fe1dbb7c2e847da6c8"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:34.10967861Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-037684e6453b5a85dea808f812babea700ee82237fd9890ba07c0244ec17ce90.scope",
+        "current": 1163264,
+        "peak": 5386240,
+        "anon": 249856,
+        "file": 344064,
+        "inactive_file": 8192,
+        "kernel": 569344,
+        "slab": 322472,
+        "sock": 0,
+        "pagetables": 73728,
+        "kernel_stack": 147456,
+        "swap": 0,
+        "pids": 9
+      },
+      "working_set": 1155072,
+      "host_tax": 6812672,
+      "total": 7967744,
+      "host_procs": [
+        {
+          "pid": 2982362,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9588736,
+          "pss": 4424704,
+          "private": 3846144,
+          "swap": 0,
+          "container": "rust-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9588736,
+              "pss": 4424704,
+              "private": 3846144,
+              "swap": 0
+            },
+            {
+              "rss": 9588736,
+              "pss": 4424704,
+              "private": 3846144,
+              "swap": 0
+            },
+            {
+              "rss": 9588736,
+              "pss": 4424704,
+              "private": 3846144,
+              "swap": 0
+            },
+            {
+              "rss": 9588736,
+              "pss": 4424704,
+              "private": 3846144,
+              "swap": 0
+            },
+            {
+              "rss": 9588736,
+              "pss": 4424704,
+              "private": 3846144,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2982586,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4050944,
+          "pss": 2387968,
+          "private": 2199552,
+          "swap": 0,
+          "container": "rust-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4050944,
+              "pss": 2387968,
+              "private": 2199552,
+              "swap": 0
+            },
+            {
+              "rss": 4050944,
+              "pss": 2387968,
+              "private": 2199552,
+              "swap": 0
+            },
+            {
+              "rss": 4050944,
+              "pss": 2387968,
+              "private": 2199552,
+              "swap": 0
+            },
+            {
+              "rss": 4050944,
+              "pss": 2387968,
+              "private": 2199552,
+              "swap": 0
+            },
+            {
+              "rss": 4050944,
+              "pss": 2387968,
+              "private": 2199552,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rust-ubuntu",
+      "lang": "rust",
+      "base": "ubuntu",
+      "container_id": "368e72659614a9e4cfe3cefd684d65133219b66218f08eda291bb59e2a736770",
+      "image": "sha256:0c2feac5015ff38de39c01b98b2e7532c01fecced330380fba3b96ad7eba3e0c",
+      "image_size": 48575310,
+      "port": "8002",
+      "pid": 2981880,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2981880,
+          "rss": 950272,
+          "comm": "hello"
+        }
+      ],
+      "provenance": {
+        "os_release": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo",
+        "runtime_version": "compiler version not collected",
+        "binary_sha256": "3e67e8aa2ce308c4c18fee7da777e05879a1b8877712f9ba00242b3b47552c44",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:0c2feac5015ff38de39c01b98b2e7532c01fecced330380fba3b96ad7eba3e0c",
+        "repo_digests": [
+          "memtest/rust-ubuntu@sha256:0c2feac5015ff38de39c01b98b2e7532c01fecced330380fba3b96ad7eba3e0c"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:33.193634718Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-368e72659614a9e4cfe3cefd684d65133219b66218f08eda291bb59e2a736770.scope",
+        "current": 1404928,
+        "peak": 5169152,
+        "anon": 434176,
+        "file": 327680,
+        "inactive_file": 12288,
+        "kernel": 643072,
+        "slab": 337656,
+        "sock": 0,
+        "pagetables": 131072,
+        "kernel_stack": 147456,
+        "swap": 0,
+        "pids": 9
+      },
+      "working_set": 1392640,
+      "host_tax": 6669312,
+      "total": 8061952,
+      "host_procs": [
+        {
+          "pid": 2981851,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9367552,
+          "pss": 4203520,
+          "private": 3624960,
+          "swap": 0,
+          "container": "rust-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9367552,
+              "pss": 4203520,
+              "private": 3624960,
+              "swap": 0
+            },
+            {
+              "rss": 9367552,
+              "pss": 4203520,
+              "private": 3624960,
+              "swap": 0
+            },
+            {
+              "rss": 9367552,
+              "pss": 4203520,
+              "private": 3624960,
+              "swap": 0
+            },
+            {
+              "rss": 9367552,
+              "pss": 4203520,
+              "private": 3624960,
+              "swap": 0
+            },
+            {
+              "rss": 9367552,
+              "pss": 4203520,
+              "private": 3624960,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2982086,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4276224,
+          "pss": 2465792,
+          "private": 2236416,
+          "swap": 0,
+          "container": "rust-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4276224,
+              "pss": 2465792,
+              "private": 2236416,
+              "swap": 0
+            },
+            {
+              "rss": 4276224,
+              "pss": 2465792,
+              "private": 2236416,
+              "swap": 0
+            },
+            {
+              "rss": 4276224,
+              "pss": 2465792,
+              "private": 2236416,
+              "swap": 0
+            },
+            {
+              "rss": 4276224,
+              "pss": 2465792,
+              "private": 2236416,
+              "swap": 0
+            },
+            {
+              "rss": 4276224,
+              "pss": 2465792,
+              "private": 2236416,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "typescript-alpine",
+      "lang": "typescript",
+      "base": "alpine",
+      "container_id": "9d8df0ea58c9bd830c79943006187c634fc8733710b766d0d301c911a6f8e301",
+      "image": "sha256:5d1d86f44a816823e8dfabf9d8be809745364869df14afc8f7ed5ae9d61a42ef",
+      "image_size": 61086069,
+      "port": "8007",
+      "pid": 2981623,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2981623,
+          "rss": 22339584,
+          "comm": "node"
+        }
+      ],
+      "provenance": {
+        "os_release": "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.22.4\nPRETTY_NAME=\"Alpine Linux v3.22\"\nHOME_URL=\"https://alpinelinux.org/\"\nBUG_REPORT_URL=\"https://gitlab.alpinelinux.org/alpine/aports/-/issues\"",
+        "runtime_version": "v22.22.3",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:5d1d86f44a816823e8dfabf9d8be809745364869df14afc8f7ed5ae9d61a42ef",
+        "repo_digests": [
+          "memtest/typescript-alpine@sha256:5d1d86f44a816823e8dfabf9d8be809745364869df14afc8f7ed5ae9d61a42ef"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:32.789873261Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-9d8df0ea58c9bd830c79943006187c634fc8733710b766d0d301c911a6f8e301.scope",
+        "current": 23592960,
+        "peak": 50946048,
+        "anon": 15179776,
+        "file": 7004160,
+        "inactive_file": 40960,
+        "kernel": 1409024,
+        "slab": 497112,
+        "sock": 0,
+        "pagetables": 765952,
+        "kernel_stack": 114688,
+        "swap": 0,
+        "pids": 7
+      },
+      "working_set": 23552000,
+      "host_tax": 6857728,
+      "total": 30409728,
+      "host_procs": [
+        {
+          "pid": 2981598,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9527296,
+          "pss": 4363264,
+          "private": 3784704,
+          "swap": 0,
+          "container": "typescript-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9527296,
+              "pss": 4363264,
+              "private": 3784704,
+              "swap": 0
+            },
+            {
+              "rss": 9527296,
+              "pss": 4363264,
+              "private": 3784704,
+              "swap": 0
+            },
+            {
+              "rss": 9527296,
+              "pss": 4363264,
+              "private": 3784704,
+              "swap": 0
+            },
+            {
+              "rss": 9527296,
+              "pss": 4363264,
+              "private": 3784704,
+              "swap": 0
+            },
+            {
+              "rss": 9527296,
+              "pss": 4363264,
+              "private": 3784704,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2981827,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4202496,
+          "pss": 2494464,
+          "private": 2281472,
+          "swap": 0,
+          "container": "typescript-alpine",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4202496,
+              "pss": 2494464,
+              "private": 2281472,
+              "swap": 0
+            },
+            {
+              "rss": 4202496,
+              "pss": 2494464,
+              "private": 2281472,
+              "swap": 0
+            },
+            {
+              "rss": 4202496,
+              "pss": 2494464,
+              "private": 2281472,
+              "swap": 0
+            },
+            {
+              "rss": 4202496,
+              "pss": 2494464,
+              "private": 2281472,
+              "swap": 0
+            },
+            {
+              "rss": 4202496,
+              "pss": 2494464,
+              "private": 2281472,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "typescript-ubuntu",
+      "lang": "typescript",
+      "base": "ubuntu",
+      "container_id": "0cc98fbf1a8b79e926653c93d552ba37fcebcbe2f48ddc390c7f8440ebbb3340",
+      "image": "sha256:9cc846b82e36edd1928543db7bbfa7d2e75d2272d2455ca2c901724303b8516d",
+      "image_size": 93008408,
+      "port": "8008",
+      "pid": 2981371,
+      "status": "Up 4 minutes",
+      "http_ok": true,
+      "http_body": "Hello World",
+      "processes": [
+        {
+          "pid": 2981371,
+          "rss": 30810112,
+          "comm": "node"
+        }
+      ],
+      "provenance": {
+        "os_release": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo",
+        "runtime_version": "v22.22.1",
+        "inventory_epoch": 1790537570.5914207,
+        "image_id": "sha256:9cc846b82e36edd1928543db7bbfa7d2e75d2272d2455ca2c901724303b8516d",
+        "repo_digests": [
+          "memtest/typescript-ubuntu@sha256:9cc846b82e36edd1928543db7bbfa7d2e75d2272d2455ca2c901724303b8516d"
+        ],
+        "architecture": "amd64",
+        "started_at": "2026-09-27T19:34:32.391024Z",
+        "restart_count": 0,
+        "user": "65534:65534",
+        "limits": {
+          "Memory": 0,
+          "MemorySwap": 0,
+          "NanoCpus": 0,
+          "CpuQuota": 0,
+          "CpusetCpus": ""
+        }
+      },
+      "cgroup": {
+        "path": "/sys/fs/cgroup/system.slice/docker-0cc98fbf1a8b79e926653c93d552ba37fcebcbe2f48ddc390c7f8440ebbb3340.scope",
+        "current": 31883264,
+        "peak": 61419520,
+        "anon": 22974464,
+        "file": 7475200,
+        "inactive_file": 16384,
+        "kernel": 1437696,
+        "slab": 537944,
+        "sock": 0,
+        "pagetables": 753664,
+        "kernel_stack": 114688,
+        "swap": 0,
+        "pids": 7
+      },
+      "working_set": 31866880,
+      "host_tax": 6604800,
+      "total": 38471680,
+      "host_procs": [
+        {
+          "pid": 2981337,
+          "kind": "shim",
+          "comm": "containerd-shim",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 9318400,
+          "pss": 4166656,
+          "private": 3592192,
+          "swap": 0,
+          "container": "typescript-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 9318400,
+              "pss": 4166656,
+              "private": 3592192,
+              "swap": 0
+            },
+            {
+              "rss": 9318400,
+              "pss": 4166656,
+              "private": 3592192,
+              "swap": 0
+            },
+            {
+              "rss": 9318400,
+              "pss": 4166656,
+              "private": 3592192,
+              "swap": 0
+            },
+            {
+              "rss": 9318400,
+              "pss": 4166656,
+              "private": 3592192,
+              "swap": 0
+            },
+            {
+              "rss": 9318400,
+              "pss": 4166656,
+              "private": 3592192,
+              "swap": 0
+            }
+          ]
+        },
+        {
+          "pid": 2981577,
+          "kind": "proxy",
+          "comm": "docker-proxy",
+          "cgroup": "/system.slice/snap.docker.dockerd.service",
+          "rss": 4104192,
+          "pss": 2438144,
+          "private": 2248704,
+          "swap": 0,
+          "container": "typescript-ubuntu",
+          "inside_container_cgroup": false,
+          "samples": [
+            {
+              "rss": 4104192,
+              "pss": 2438144,
+              "private": 2248704,
+              "swap": 0
+            },
+            {
+              "rss": 4104192,
+              "pss": 2438144,
+              "private": 2248704,
+              "swap": 0
+            },
+            {
+              "rss": 4104192,
+              "pss": 2438144,
+              "private": 2248704,
+              "swap": 0
+            },
+            {
+              "rss": 4104192,
+              "pss": 2438144,
+              "private": 2248704,
+              "swap": 0
+            },
+            {
+              "rss": 4104192,
+              "pss": 2438144,
+              "private": 2248704,
+              "swap": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "shared_procs": [
+    {
+      "pid": 2942956,
+      "kind": "dockerd",
+      "comm": "dockerd",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 65458176,
+      "pss": 65421312,
+      "private": 65400832,
+      "swap": 1511424,
+      "container": null,
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        },
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        },
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        },
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        },
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        }
+      ]
+    },
+    {
+      "pid": 2943037,
+      "kind": "containerd",
+      "comm": "containerd",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 43401216,
+      "pss": 43372544,
+      "private": 43360256,
+      "swap": 282624,
+      "container": null,
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 43282432,
+          "pss": 43253760,
+          "private": 43241472,
+          "swap": 282624
+        },
+        {
+          "rss": 43401216,
+          "pss": 43372544,
+          "private": 43360256,
+          "swap": 282624
+        },
+        {
+          "rss": 43401216,
+          "pss": 43372544,
+          "private": 43360256,
+          "swap": 282624
+        },
+        {
+          "rss": 43401216,
+          "pss": 43372544,
+          "private": 43360256,
+          "swap": 282624
+        },
+        {
+          "rss": 43401216,
+          "pss": 43372544,
+          "private": 43360256,
+          "swap": 282624
+        }
+      ]
+    }
+  ],
+  "all_docker_procs": [
+    {
+      "pid": 2942956,
+      "kind": "dockerd",
+      "comm": "dockerd",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 65458176,
+      "pss": 65421312,
+      "private": 65400832,
+      "swap": 1511424,
+      "container": null,
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        },
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        },
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        },
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        },
+        {
+          "rss": 65458176,
+          "pss": 65421312,
+          "private": 65400832,
+          "swap": 1511424
+        }
+      ]
+    },
+    {
+      "pid": 2943037,
+      "kind": "containerd",
+      "comm": "containerd",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 43401216,
+      "pss": 43372544,
+      "private": 43360256,
+      "swap": 282624,
+      "container": null,
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 43282432,
+          "pss": 43253760,
+          "private": 43241472,
+          "swap": 282624
+        },
+        {
+          "rss": 43401216,
+          "pss": 43372544,
+          "private": 43360256,
+          "swap": 282624
+        },
+        {
+          "rss": 43401216,
+          "pss": 43372544,
+          "private": 43360256,
+          "swap": 282624
+        },
+        {
+          "rss": 43401216,
+          "pss": 43372544,
+          "private": 43360256,
+          "swap": 282624
+        },
+        {
+          "rss": 43401216,
+          "pss": 43372544,
+          "private": 43360256,
+          "swap": 282624
+        }
+      ]
+    },
+    {
+      "pid": 2980315,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9396224,
+      "pss": 4267008,
+      "private": 3698688,
+      "swap": 0,
+      "container": "go-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9396224,
+          "pss": 4267008,
+          "private": 3698688,
+          "swap": 0
+        },
+        {
+          "rss": 9396224,
+          "pss": 4267008,
+          "private": 3698688,
+          "swap": 0
+        },
+        {
+          "rss": 9396224,
+          "pss": 4267008,
+          "private": 3698688,
+          "swap": 0
+        },
+        {
+          "rss": 9396224,
+          "pss": 4267008,
+          "private": 3698688,
+          "swap": 0
+        },
+        {
+          "rss": 9396224,
+          "pss": 4267008,
+          "private": 3698688,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2980554,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4210688,
+      "pss": 2462720,
+      "private": 2248704,
+      "swap": 0,
+      "container": "go-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4210688,
+          "pss": 2462720,
+          "private": 2248704,
+          "swap": 0
+        },
+        {
+          "rss": 4210688,
+          "pss": 2462720,
+          "private": 2248704,
+          "swap": 0
+        },
+        {
+          "rss": 4210688,
+          "pss": 2462720,
+          "private": 2248704,
+          "swap": 0
+        },
+        {
+          "rss": 4210688,
+          "pss": 2462720,
+          "private": 2248704,
+          "swap": 0
+        },
+        {
+          "rss": 4210688,
+          "pss": 2462720,
+          "private": 2248704,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2980579,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9367552,
+      "pss": 4238336,
+      "private": 3670016,
+      "swap": 0,
+      "container": "python-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9367552,
+          "pss": 4238336,
+          "private": 3670016,
+          "swap": 0
+        },
+        {
+          "rss": 9367552,
+          "pss": 4238336,
+          "private": 3670016,
+          "swap": 0
+        },
+        {
+          "rss": 9367552,
+          "pss": 4238336,
+          "private": 3670016,
+          "swap": 0
+        },
+        {
+          "rss": 9367552,
+          "pss": 4238336,
+          "private": 3670016,
+          "swap": 0
+        },
+        {
+          "rss": 9367552,
+          "pss": 4238336,
+          "private": 3670016,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2980804,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4104192,
+      "pss": 2441216,
+      "private": 2252800,
+      "swap": 0,
+      "container": "python-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4104192,
+          "pss": 2441216,
+          "private": 2252800,
+          "swap": 0
+        },
+        {
+          "rss": 4104192,
+          "pss": 2441216,
+          "private": 2252800,
+          "swap": 0
+        },
+        {
+          "rss": 4104192,
+          "pss": 2441216,
+          "private": 2252800,
+          "swap": 0
+        },
+        {
+          "rss": 4104192,
+          "pss": 2441216,
+          "private": 2252800,
+          "swap": 0
+        },
+        {
+          "rss": 4104192,
+          "pss": 2441216,
+          "private": 2252800,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2980827,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9408512,
+      "pss": 4279296,
+      "private": 3710976,
+      "swap": 0,
+      "container": "csharp-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9408512,
+          "pss": 4279296,
+          "private": 3710976,
+          "swap": 0
+        },
+        {
+          "rss": 9408512,
+          "pss": 4279296,
+          "private": 3710976,
+          "swap": 0
+        },
+        {
+          "rss": 9408512,
+          "pss": 4279296,
+          "private": 3710976,
+          "swap": 0
+        },
+        {
+          "rss": 9408512,
+          "pss": 4279296,
+          "private": 3710976,
+          "swap": 0
+        },
+        {
+          "rss": 9408512,
+          "pss": 4279296,
+          "private": 3710976,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2981050,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4173824,
+      "pss": 2414592,
+      "private": 2195456,
+      "swap": 0,
+      "container": "csharp-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4173824,
+          "pss": 2414592,
+          "private": 2195456,
+          "swap": 0
+        },
+        {
+          "rss": 4173824,
+          "pss": 2414592,
+          "private": 2195456,
+          "swap": 0
+        },
+        {
+          "rss": 4173824,
+          "pss": 2414592,
+          "private": 2195456,
+          "swap": 0
+        },
+        {
+          "rss": 4173824,
+          "pss": 2414592,
+          "private": 2195456,
+          "swap": 0
+        },
+        {
+          "rss": 4173824,
+          "pss": 2414592,
+          "private": 2195456,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2981083,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9437184,
+      "pss": 4307968,
+      "private": 3739648,
+      "swap": 0,
+      "container": "csharp-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9437184,
+          "pss": 4307968,
+          "private": 3739648,
+          "swap": 0
+        },
+        {
+          "rss": 9437184,
+          "pss": 4307968,
+          "private": 3739648,
+          "swap": 0
+        },
+        {
+          "rss": 9437184,
+          "pss": 4307968,
+          "private": 3739648,
+          "swap": 0
+        },
+        {
+          "rss": 9437184,
+          "pss": 4307968,
+          "private": 3739648,
+          "swap": 0
+        },
+        {
+          "rss": 9437184,
+          "pss": 4307968,
+          "private": 3739648,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2981315,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4132864,
+      "pss": 2428928,
+      "private": 2215936,
+      "swap": 0,
+      "container": "csharp-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4132864,
+          "pss": 2428928,
+          "private": 2215936,
+          "swap": 0
+        },
+        {
+          "rss": 4132864,
+          "pss": 2428928,
+          "private": 2215936,
+          "swap": 0
+        },
+        {
+          "rss": 4132864,
+          "pss": 2428928,
+          "private": 2215936,
+          "swap": 0
+        },
+        {
+          "rss": 4132864,
+          "pss": 2428928,
+          "private": 2215936,
+          "swap": 0
+        },
+        {
+          "rss": 4132864,
+          "pss": 2428928,
+          "private": 2215936,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2981337,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9318400,
+      "pss": 4166656,
+      "private": 3592192,
+      "swap": 0,
+      "container": "typescript-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9318400,
+          "pss": 4166656,
+          "private": 3592192,
+          "swap": 0
+        },
+        {
+          "rss": 9318400,
+          "pss": 4166656,
+          "private": 3592192,
+          "swap": 0
+        },
+        {
+          "rss": 9318400,
+          "pss": 4166656,
+          "private": 3592192,
+          "swap": 0
+        },
+        {
+          "rss": 9318400,
+          "pss": 4166656,
+          "private": 3592192,
+          "swap": 0
+        },
+        {
+          "rss": 9318400,
+          "pss": 4166656,
+          "private": 3592192,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2981577,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4104192,
+      "pss": 2438144,
+      "private": 2248704,
+      "swap": 0,
+      "container": "typescript-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4104192,
+          "pss": 2438144,
+          "private": 2248704,
+          "swap": 0
+        },
+        {
+          "rss": 4104192,
+          "pss": 2438144,
+          "private": 2248704,
+          "swap": 0
+        },
+        {
+          "rss": 4104192,
+          "pss": 2438144,
+          "private": 2248704,
+          "swap": 0
+        },
+        {
+          "rss": 4104192,
+          "pss": 2438144,
+          "private": 2248704,
+          "swap": 0
+        },
+        {
+          "rss": 4104192,
+          "pss": 2438144,
+          "private": 2248704,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2981598,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9527296,
+      "pss": 4363264,
+      "private": 3784704,
+      "swap": 0,
+      "container": "typescript-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9527296,
+          "pss": 4363264,
+          "private": 3784704,
+          "swap": 0
+        },
+        {
+          "rss": 9527296,
+          "pss": 4363264,
+          "private": 3784704,
+          "swap": 0
+        },
+        {
+          "rss": 9527296,
+          "pss": 4363264,
+          "private": 3784704,
+          "swap": 0
+        },
+        {
+          "rss": 9527296,
+          "pss": 4363264,
+          "private": 3784704,
+          "swap": 0
+        },
+        {
+          "rss": 9527296,
+          "pss": 4363264,
+          "private": 3784704,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2981827,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4202496,
+      "pss": 2494464,
+      "private": 2281472,
+      "swap": 0,
+      "container": "typescript-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4202496,
+          "pss": 2494464,
+          "private": 2281472,
+          "swap": 0
+        },
+        {
+          "rss": 4202496,
+          "pss": 2494464,
+          "private": 2281472,
+          "swap": 0
+        },
+        {
+          "rss": 4202496,
+          "pss": 2494464,
+          "private": 2281472,
+          "swap": 0
+        },
+        {
+          "rss": 4202496,
+          "pss": 2494464,
+          "private": 2281472,
+          "swap": 0
+        },
+        {
+          "rss": 4202496,
+          "pss": 2494464,
+          "private": 2281472,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2981851,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9367552,
+      "pss": 4203520,
+      "private": 3624960,
+      "swap": 0,
+      "container": "rust-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9367552,
+          "pss": 4203520,
+          "private": 3624960,
+          "swap": 0
+        },
+        {
+          "rss": 9367552,
+          "pss": 4203520,
+          "private": 3624960,
+          "swap": 0
+        },
+        {
+          "rss": 9367552,
+          "pss": 4203520,
+          "private": 3624960,
+          "swap": 0
+        },
+        {
+          "rss": 9367552,
+          "pss": 4203520,
+          "private": 3624960,
+          "swap": 0
+        },
+        {
+          "rss": 9367552,
+          "pss": 4203520,
+          "private": 3624960,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2982086,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4276224,
+      "pss": 2465792,
+      "private": 2236416,
+      "swap": 0,
+      "container": "rust-ubuntu",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4276224,
+          "pss": 2465792,
+          "private": 2236416,
+          "swap": 0
+        },
+        {
+          "rss": 4276224,
+          "pss": 2465792,
+          "private": 2236416,
+          "swap": 0
+        },
+        {
+          "rss": 4276224,
+          "pss": 2465792,
+          "private": 2236416,
+          "swap": 0
+        },
+        {
+          "rss": 4276224,
+          "pss": 2465792,
+          "private": 2236416,
+          "swap": 0
+        },
+        {
+          "rss": 4276224,
+          "pss": 2465792,
+          "private": 2236416,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2982115,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9605120,
+      "pss": 4441088,
+      "private": 3862528,
+      "swap": 0,
+      "container": "go-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9605120,
+          "pss": 4441088,
+          "private": 3862528,
+          "swap": 0
+        },
+        {
+          "rss": 9605120,
+          "pss": 4441088,
+          "private": 3862528,
+          "swap": 0
+        },
+        {
+          "rss": 9605120,
+          "pss": 4441088,
+          "private": 3862528,
+          "swap": 0
+        },
+        {
+          "rss": 9605120,
+          "pss": 4441088,
+          "private": 3862528,
+          "swap": 0
+        },
+        {
+          "rss": 9605120,
+          "pss": 4441088,
+          "private": 3862528,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2982338,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4046848,
+      "pss": 2378752,
+      "private": 2174976,
+      "swap": 0,
+      "container": "go-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4046848,
+          "pss": 2378752,
+          "private": 2174976,
+          "swap": 0
+        },
+        {
+          "rss": 4046848,
+          "pss": 2378752,
+          "private": 2174976,
+          "swap": 0
+        },
+        {
+          "rss": 4046848,
+          "pss": 2378752,
+          "private": 2174976,
+          "swap": 0
+        },
+        {
+          "rss": 4046848,
+          "pss": 2378752,
+          "private": 2174976,
+          "swap": 0
+        },
+        {
+          "rss": 4046848,
+          "pss": 2378752,
+          "private": 2174976,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2982362,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9588736,
+      "pss": 4424704,
+      "private": 3846144,
+      "swap": 0,
+      "container": "rust-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9588736,
+          "pss": 4424704,
+          "private": 3846144,
+          "swap": 0
+        },
+        {
+          "rss": 9588736,
+          "pss": 4424704,
+          "private": 3846144,
+          "swap": 0
+        },
+        {
+          "rss": 9588736,
+          "pss": 4424704,
+          "private": 3846144,
+          "swap": 0
+        },
+        {
+          "rss": 9588736,
+          "pss": 4424704,
+          "private": 3846144,
+          "swap": 0
+        },
+        {
+          "rss": 9588736,
+          "pss": 4424704,
+          "private": 3846144,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2982586,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4050944,
+      "pss": 2387968,
+      "private": 2199552,
+      "swap": 0,
+      "container": "rust-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4050944,
+          "pss": 2387968,
+          "private": 2199552,
+          "swap": 0
+        },
+        {
+          "rss": 4050944,
+          "pss": 2387968,
+          "private": 2199552,
+          "swap": 0
+        },
+        {
+          "rss": 4050944,
+          "pss": 2387968,
+          "private": 2199552,
+          "swap": 0
+        },
+        {
+          "rss": 4050944,
+          "pss": 2387968,
+          "private": 2199552,
+          "swap": 0
+        },
+        {
+          "rss": 4050944,
+          "pss": 2387968,
+          "private": 2199552,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2982617,
+      "kind": "shim",
+      "comm": "containerd-shim",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 9482240,
+      "pss": 4353024,
+      "private": 3784704,
+      "swap": 0,
+      "container": "python-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 9482240,
+          "pss": 4353024,
+          "private": 3784704,
+          "swap": 0
+        },
+        {
+          "rss": 9482240,
+          "pss": 4353024,
+          "private": 3784704,
+          "swap": 0
+        },
+        {
+          "rss": 9482240,
+          "pss": 4353024,
+          "private": 3784704,
+          "swap": 0
+        },
+        {
+          "rss": 9482240,
+          "pss": 4353024,
+          "private": 3784704,
+          "swap": 0
+        },
+        {
+          "rss": 9482240,
+          "pss": 4353024,
+          "private": 3784704,
+          "swap": 0
+        }
+      ]
+    },
+    {
+      "pid": 2982841,
+      "kind": "proxy",
+      "comm": "docker-proxy",
+      "cgroup": "/system.slice/snap.docker.dockerd.service",
+      "rss": 4349952,
+      "pss": 2587648,
+      "private": 2371584,
+      "swap": 0,
+      "container": "python-alpine",
+      "inside_container_cgroup": false,
+      "samples": [
+        {
+          "rss": 4349952,
+          "pss": 2587648,
+          "private": 2371584,
+          "swap": 0
+        },
+        {
+          "rss": 4349952,
+          "pss": 2587648,
+          "private": 2371584,
+          "swap": 0
+        },
+        {
+          "rss": 4349952,
+          "pss": 2587648,
+          "private": 2371584,
+          "swap": 0
+        },
+        {
+          "rss": 4349952,
+          "pss": 2587648,
+          "private": 2371584,
+          "swap": 0
+        },
+        {
+          "rss": 4349952,
+          "pss": 2587648,
+          "private": 2371584,
+          "swap": 0
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "env": {
+      "timestamp": "2026-09-27 21:34:30 +0200",
+      "kernel": "Linux 7.0.0-31-generic",
+      "cpus": 8,
+      "docker_cmd": "/snap/bin/docker",
+      "docker": {
+        "server_version": "29.8.0",
+        "storage_driver": "overlayfs",
+        "cgroup_driver": "systemd",
+        "cgroup_version": "2",
+        "runtime": "runc",
+        "id": "5ad919ed-9938-474f-bb34-b406bad9ac69",
+        "rootless": "[name=apparmor,profile=default name=seccomp,profile=builtin name=cgroupns]"
+      },
+      "host_mem": {
+        "total": 32567091200,
+        "available": 8133783552,
+        "free": 6044782592,
+        "used": 23341178880,
+        "committed": 61066387456
+      },
+      "have_pss": false,
+      "euid": 1000,
+      "boot_id": "4ad29a73-cc1f-41b2-bc76-d723008e8726",
+      "epoch": 1790537670.3103747,
+      "host_used_formula": "MemTotal-MemFree-Buffers-Cached-SReclaimable"
+    },
+    "host_mem": {
+      "total": 32567091200,
+      "available": 8133783552,
+      "free": 6044782592,
+      "used": 23341178880,
+      "committed": 61066387456
+    },
+    "docker_procs": [
+      {
+        "pid": 2942956,
+        "kind": "dockerd",
+        "comm": "dockerd",
+        "cgroup": "/system.slice/snap.docker.dockerd.service",
+        "rss": 71421952,
+        "pss": null,
+        "private": null,
+        "swap": null,
+        "container": null,
+        "inside_container_cgroup": false
+      },
+      {
+        "pid": 2943037,
+        "kind": "containerd",
+        "comm": "containerd",
+        "cgroup": "/system.slice/snap.docker.dockerd.service",
+        "rss": 56135680,
+        "pss": null,
+        "private": null,
+        "swap": null,
+        "container": null,
+        "inside_container_cgroup": false
+      }
+    ],
+    "docker_procs_total": 127557632,
+    "docker_procs_metric": "RSS",
+    "samples": 5,
+    "running_memtest_containers": 0,
+    "epoch": 1790537670.3104744
+  },
+  "requests_per_service": 200,
+  "settle_seconds": 15.0,
+  "samples": 5,
+  "sample_interval_seconds": 2.0,
+  "measurement_started_epoch": 1790537955.251447,
+  "measurement_finished_epoch": 1790537966.1426392,
+  "accounting": {
+    "containers_working_set": 171732992,
+    "containers_current": 173547520,
+    "containers_swap": 0,
+    "attributed_host_tax": 67545088,
+    "shared_daemon": 108793856,
+    "unattributed_host_processes": 0,
+    "estimated_total": 348071936,
+    "host_metric": "PSS"
+  },
+  "baseline_issues": [
+    "Baseline and current host metrics differ or have partial PSS coverage."
+  ]
+}
