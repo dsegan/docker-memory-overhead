@@ -3,6 +3,10 @@
 #
 # Deliberately unconstrained: no mem_limit / cpus, so the report measures what
 # each runtime actually chooses to allocate rather than what a cap forced.
+#
+# Ports are published on an explicit 127.0.0.1 rather than a bare "8001:8080".
+# A bare mapping binds both address families and costs TWO docker-proxy
+# processes per port (0.0.0.0 and ::); naming an IPv4 address costs one.
 
 x-svc: &svc
   restart: "no"
@@ -15,7 +19,7 @@ services:
     build: { context: ./rust, dockerfile: Dockerfile.alpine }
     image: memtest/rust-alpine
     container_name: memtest-rust-alpine
-    ports: ["8001:8080"]
+    ports: ["127.0.0.1:8001:8080"]
     labels: { memtest.lang: rust, memtest.base: alpine }
 
   rust-ubuntu:
@@ -23,7 +27,7 @@ services:
     build: { context: ./rust, dockerfile: Dockerfile.ubuntu }
     image: memtest/rust-ubuntu
     container_name: memtest-rust-ubuntu
-    ports: ["8002:8080"]
+    ports: ["127.0.0.1:8002:8080"]
     labels: { memtest.lang: rust, memtest.base: ubuntu }
 
   go-alpine:
@@ -31,7 +35,7 @@ services:
     build: { context: ./go, dockerfile: Dockerfile.alpine }
     image: memtest/go-alpine
     container_name: memtest-go-alpine
-    ports: ["8003:8080"]
+    ports: ["127.0.0.1:8003:8080"]
     labels: { memtest.lang: go, memtest.base: alpine }
 
   go-ubuntu:
@@ -39,7 +43,7 @@ services:
     build: { context: ./go, dockerfile: Dockerfile.ubuntu }
     image: memtest/go-ubuntu
     container_name: memtest-go-ubuntu
-    ports: ["8004:8080"]
+    ports: ["127.0.0.1:8004:8080"]
     labels: { memtest.lang: go, memtest.base: ubuntu }
 
   python-alpine:
@@ -47,7 +51,7 @@ services:
     build: { context: ./python, dockerfile: Dockerfile.alpine }
     image: memtest/python-alpine
     container_name: memtest-python-alpine
-    ports: ["8005:8080"]
+    ports: ["127.0.0.1:8005:8080"]
     labels: { memtest.lang: python, memtest.base: alpine }
 
   python-ubuntu:
@@ -55,7 +59,7 @@ services:
     build: { context: ./python, dockerfile: Dockerfile.ubuntu }
     image: memtest/python-ubuntu
     container_name: memtest-python-ubuntu
-    ports: ["8006:8080"]
+    ports: ["127.0.0.1:8006:8080"]
     labels: { memtest.lang: python, memtest.base: ubuntu }
 
   typescript-alpine:
@@ -63,7 +67,7 @@ services:
     build: { context: ./typescript, dockerfile: Dockerfile.alpine }
     image: memtest/typescript-alpine
     container_name: memtest-typescript-alpine
-    ports: ["8007:8080"]
+    ports: ["127.0.0.1:8007:8080"]
     labels: { memtest.lang: typescript, memtest.base: alpine }
 
   typescript-ubuntu:
@@ -71,7 +75,7 @@ services:
     build: { context: ./typescript, dockerfile: Dockerfile.ubuntu }
     image: memtest/typescript-ubuntu
     container_name: memtest-typescript-ubuntu
-    ports: ["8008:8080"]
+    ports: ["127.0.0.1:8008:8080"]
     labels: { memtest.lang: typescript, memtest.base: ubuntu }
 
   csharp-alpine:
@@ -79,7 +83,7 @@ services:
     build: { context: ./csharp, dockerfile: Dockerfile.alpine }
     image: memtest/csharp-alpine
     container_name: memtest-csharp-alpine
-    ports: ["8009:8080"]
+    ports: ["127.0.0.1:8009:8080"]
     labels: { memtest.lang: csharp, memtest.base: alpine }
 
   csharp-ubuntu:
@@ -87,5 +91,5 @@ services:
     build: { context: ./csharp, dockerfile: Dockerfile.ubuntu }
     image: memtest/csharp-ubuntu
     container_name: memtest-csharp-ubuntu
-    ports: ["8010:8080"]
+    ports: ["127.0.0.1:8010:8080"]
     labels: { memtest.lang: csharp, memtest.base: ubuntu }

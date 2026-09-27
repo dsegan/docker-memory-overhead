@@ -130,17 +130,37 @@ Read these before quoting any number.
 
 ## Findings worth knowing
 
-- **Two `docker-proxy` processes per published port**, one bound to `0.0.0.0`
-  and one to `::`. Ten `ports:` entries spawn twenty proxies; on a host without
-  working IPv6 half of that is pure waste. `127.0.0.1:PORT:8080` or
-  `network_mode: host` avoids it.
-- **Per-container host tax is roughly flat at ~15 MiB** (shim + two proxies) and
-  is invisible to `docker stats`. For Rust and Go it dwarfs the container
-  itself: a 1.1 MiB rust-alpine container costs ~15.8 MiB all-in.
-- **The alpine/ubuntu working-set gap is small — single-digit MiB — while the
-  image-size gap is ~42 MiB.** Base choice is mostly a disk and pull-time
-  decision, not a RAM one. The exception is Node, where ubuntu measured
-  noticeably higher.
+Measured on this host (8 CPUs, 31 GiB), 10 services, PSS for host-side processes.
+
+- **Two `docker-proxy` processes per published port** when you write a bare
+  `"8001:8080"` — Docker binds `0.0.0.0` and `::` separately. Writing
+  `127.0.0.1:8001:8080` halves the count. Measured saving: proxy PSS **38.9 →
+  24.9 MiB**, total host tax **80.4 → 68.2 MiB**. The `::` proxies were the cheap
+  half (~1.3 MiB PSS each, versus ~2.6 for the IPv4 ones) because they never
+  served a request, so the win is real but modest — about 1.2 MiB per container.
+- **Measure this with PSS, not RSS.** RSS made the same change look like a
+  −9.7 MiB saving *and* showed the surviving proxies "growing" 4.0 → 4.8 MiB.
+  That growth was an artifact: with ten fewer processes sharing the same text
+  pages, RSS attributes more to each survivor. PSS shows what actually happened
+  — ten ~1.3 MiB processes disappeared and nothing else moved.
+- **Per-container host tax is ~6.8 MiB** (shim + one proxy, PSS) and barely
+  varies by language. For the lean runtimes it dominates: rust-alpine's
+  container is ~1 MiB, so the shim and proxy cost it ~7× more than the service.
+- **RSS overstates shims by 2.2× and proxies by 1.5×** (shim 92.3 → 41.5 PSS;
+  proxy 58.8 → 38.9). Any "docker overhead" figure summing RSS over 20-30
+  processes is roughly double the truth.
+- **The alpine/ubuntu working-set gap is single-digit MiB; the image-size gap is
+  ~42 MiB.** Base choice is a disk and pull-time decision, not a RAM one. Two
+  exceptions: Python is *cheaper* on Ubuntu (musl costs CPython ~2 MiB), and Node
+  is ~8 MiB cheaper on alpine, because Ubuntu's `nodejs` is a dfsg rebuild
+  against system libraries rather than the official Node build.
+- **Host `MemUsed` is too noisy for small effects.** Two baselines 18 minutes
+  apart, stack down both times, differed by 360 MiB from unrelated activity.
+  Use it as an order-of-magnitude check only; trust per-process figures below
+  ~100 MiB.
+- **dockerd's RSS swings tens of MiB.** Freshly restarted it read 96 → 42 → 50
+  MiB within 15 seconds as Go's scavenger released startup allocations. Hence
+  `--samples`, which takes a median.
 
 ## Requirements
 

@@ -351,18 +351,48 @@ def classify(pid: int) -> tuple[str, str] | None:
     return None
 
 
-def collect_docker_procs() -> list[ProcInfo]:
+def _median(vals: list[int | None]) -> int | None:
+    vs = sorted(v for v in vals if v is not None)
+    if not vs:
+        return None
+    mid = len(vs) // 2
+    return vs[mid] if len(vs) % 2 else (vs[mid - 1] + vs[mid]) // 2
+
+
+def collect_docker_procs(samples: int = 3, interval: float = 2.0) -> list[ProcInfo]:
+    """Sample host-side Docker processes several times and take the median.
+
+    dockerd is a Go program: it allocates hard while restoring image state and
+    then its scavenger hands pages back. Measured on this host, a freshly
+    restarted dockerd read 96 MiB, then 42 MiB, then 50 MiB within ~15 seconds.
+    A single sample is therefore worth +/-50 MiB of noise -- larger than most of
+    the effects this report tries to resolve -- so never trust just one.
+    """
+    obs: dict[int, dict[str, list[int | None]]] = {}
+    meta: dict[int, tuple[str, str, str]] = {}
+    for i in range(max(1, samples)):
+        if i:
+            time.sleep(interval)
+        for pid in all_pids():
+            c = classify(pid)
+            if not c:
+                continue
+            kind, comm = c
+            m = proc_mem(pid)
+            slot = obs.setdefault(pid, {k: [] for k in ("rss", "pss", "private", "swap")})
+            for k in slot:
+                slot[k].append(m[k])
+            meta.setdefault(pid, (kind, comm, proc_cgroup(pid)))
+
     out = []
-    for pid in all_pids():
-        c = classify(pid)
-        if not c:
-            continue
-        kind, comm = c
-        m = proc_mem(pid)
+    for pid, slot in obs.items():
+        kind, comm, cg = meta[pid]
         out.append(ProcInfo(
-            pid=pid, kind=kind, comm=comm, cgroup=proc_cgroup(pid),
-            rss=m["rss"], pss=m["pss"], private=m["private"], swap=m["swap"],
+            pid=pid, kind=kind, comm=comm, cgroup=cg,
+            rss=_median(slot["rss"]), pss=_median(slot["pss"]),
+            private=_median(slot["private"]), swap=_median(slot["swap"]),
         ))
+    out.sort(key=lambda p: p.pid)
     return out
 
 
@@ -490,7 +520,7 @@ def environment() -> dict:
 # baseline
 # --------------------------------------------------------------------------- #
 
-def cmd_baseline(_args) -> int:
+def cmd_baseline(args) -> int:
     svcs = [s for s in discover_services() if "Up" in s.status]
     if svcs:
         print(
@@ -499,7 +529,7 @@ def cmd_baseline(_args) -> int:
             % len(svcs),
             file=sys.stderr,
         )
-    procs = collect_docker_procs()
+    procs = collect_docker_procs(args.samples)
     env = environment()
     env["have_pss"] = any(p.pss is not None for p in procs)
     snap = {
@@ -508,6 +538,7 @@ def cmd_baseline(_args) -> int:
         "docker_procs": [asdict(p) for p in procs],
         "docker_procs_total_pss": sum(best(p) for p in procs),
         "running_memtest_containers": len(svcs),
+        "epoch": time.time(),
     }
     REPORTS.mkdir(exist_ok=True)
     BASELINE.write_text(json.dumps(snap, indent=2) + "\n")
@@ -565,7 +596,7 @@ def attribute_procs(svcs: list[Service], procs: list[ProcInfo]) -> list[ProcInfo
     return shared
 
 
-def collect(requests: int, settle: float = 2.0) -> dict:
+def collect(requests: int, settle: float = 2.0, samples: int = 3) -> dict:
     env = environment()
     svcs = discover_services()
     if not svcs:
@@ -591,7 +622,7 @@ def collect(requests: int, settle: float = 2.0) -> dict:
         if s.port:
             s.http_ok, s.http_body = hit(s.port)
 
-    procs = collect_docker_procs()
+    procs = collect_docker_procs(samples)
     env["have_pss"] = any(p.pss is not None for p in procs)
     shared = attribute_procs(svcs, procs)
 
@@ -604,6 +635,7 @@ def collect(requests: int, settle: float = 2.0) -> dict:
         "all_docker_procs": procs,
         "baseline": base,
         "requests_per_service": requests,
+        "samples": samples,
     }
 
 
@@ -622,6 +654,10 @@ def render(data: dict) -> str:
       f"{env['cpus']} CPUs &middot; docker `{env['docker']['server_version']}` "
       f"(cgroup {env['docker']['cgroup_version']}, driver `{env['docker']['cgroup_driver']}`, "
       f"storage `{env['docker']['storage_driver']}`)")
+    A("")
+    A(f"Host-side processes are the **median of {data['samples']} samples** taken 2s apart; "
+      "dockerd's RSS swings tens of MiB as its scavenger releases startup allocations, "
+      "so a single reading is noise.")
     A("")
     A(f"Each service was warmed with **{data['requests_per_service']} requests** before "
       "measurement, so runtimes that allocate lazily (.NET JIT tiers, V8, CPython "
@@ -799,6 +835,14 @@ def render(data: dict) -> str:
         delta = hm["used"] - base["host_mem"]["used"]
         A("### Cross-check against host RAM")
         A("")
+        age = time.time() - base.get("epoch", time.time())
+        if age > 600:
+            A(f"> **Baseline is {age / 60:.0f} minutes old.** Host `MemUsed` drifts on its own "
+              "as unrelated processes come and go — measured on this host at roughly "
+              "300+ MiB over 20 minutes, which swamps most of what this report resolves. "
+              "The delta below is therefore only indicative. Re-take the baseline "
+              "immediately before bringing the stack up when the cross-check matters.")
+            A("")
         A(table(
             ["measure", "baseline (stack down)", "now (stack up)", "Δ"],
             [
@@ -878,7 +922,7 @@ def to_json(data: dict) -> str:
 
 
 def cmd_report(args) -> int:
-    data = collect(args.requests, args.settle)
+    data = collect(args.requests, args.settle, args.samples)
     md, js = render(data), to_json(data)
     REPORTS.mkdir(exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
@@ -897,7 +941,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("baseline", help="snapshot host+daemon memory with the stack DOWN")
+    b = sub.add_parser("baseline", help="snapshot host+daemon memory with the stack DOWN")
+    b.add_argument("--samples", type=int, default=5,
+                   help="median over N samples of host-side processes (default: 5)")
     r = sub.add_parser("report", help="measure the running stack and write a report")
     r.add_argument("--requests", type=int, default=50,
                    help="warm-up requests per service before measuring (default: 50)")
@@ -905,6 +951,9 @@ def main() -> int:
                    help="seconds to wait after warm-up before sampling (default: 2). "
                         "Higher values let file pages age into the inactive LRU, which is "
                         "what makes working set < memory.current.")
+    r.add_argument("--samples", type=int, default=5,
+                   help="median over N samples of host-side processes, 2s apart "
+                        "(default: 5). dockerd RSS swings tens of MiB; one sample is noise.")
     r.add_argument("--quiet", action="store_true", help="write files without printing")
     args = ap.parse_args()
     return {"baseline": cmd_baseline, "report": cmd_report}[args.cmd](args)
