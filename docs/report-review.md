@@ -102,6 +102,18 @@ Go executable hashes match across these two images; the Rust hashes differ.
 
 ## Validation and remaining limits
 
+For the next proxy comparison, Compose now uses bare `8001:8080`-style mappings
+instead of explicit 127.0.0.1 bindings. The preserved 21:42 report above is the
+single-proxy reference: ten proxies, 22.1 MiB proxy PSS and 63.6 MiB combined
+shim/proxy PSS. The new configuration is expected to create twenty proxies on
+this host; verify the measured count before comparing. Keep the same images and
+200-request / 15-second / five-sample settings, and take another PSS baseline
+with the stack stopped. Use `docker compose up -d --no-build` after the baseline
+so Compose recreates containers with the changed bindings; `start` or `restart`
+alone will not apply the port changes. Compare proxy PSS and total host tax
+separately from changes in container working sets and shared daemons. The
+warm-up still uses IPv4, so the IPv6 proxies will not receive benchmark traffic.
+
 Nineteen standard-library regression tests cover accounting, mixed metrics,
 incompatible baselines, missing data, endpoint bodies, process churn, invalid
 arguments, incomplete matrices, and separation of inventory probes from the

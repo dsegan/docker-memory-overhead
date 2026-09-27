@@ -21,9 +21,11 @@ See [the report review](docs/report-review.md) for corrections to earlier findin
 
 Both variants share application source, but libraries, linking, build flags and
 patch versions can differ. All run as UID/GID 65534. Compose sets no CPU or memory
-limit; inherited host/cgroup constraints can still apply. Ports bind to
-127.0.0.1. On the measured Docker configuration this creates one IPv4 proxy per
-service; proxy behavior depends on daemon and network configuration.
+limit; inherited host/cgroup constraints can still apply. Ports use bare
+`8001:8080`-style mappings on all host interfaces. On this host these are expected
+to create IPv4 and IPv6 proxies, two per service; verify the count in the report.
+The preserved 21:42 PSS report used explicit 127.0.0.1 bindings and ten proxies.
+Proxy behavior depends on daemon and network configuration.
 
 ## Usage
 
