@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure the *full* memory impact of the docker-mem-test stack.
+"""Estimate the memory footprint of the docker-mem-test stack.
 
 Three layers are accounted for separately, because "how much RAM does this
 cost me" is not answered by `docker stats` alone:
@@ -9,9 +9,8 @@ cost me" is not answered by `docker stats` alone:
      daemon spawns for every container / published port
   3. shared daemon      -- dockerd + containerd themselves
 
-Layer 2 is the one people forget; with 10 containers it is not a rounding
-error. All three are summed into a grand total, which is then cross-checked
-against the host's own MemUsed delta versus a baseline snapshot.
+The combined estimate is not exact physical-memory accounting. An incremental
+estimate can be compared with a host delta only with a compatible baseline.
 
 Usage:
   memreport.py baseline                 # run with the stack DOWN
@@ -22,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import shutil
@@ -31,11 +31,13 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field, asdict
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REPORTS = ROOT / "reports"
 BASELINE = REPORTS / "baseline.json"
+INVENTORY = REPORTS / "inventory.json"
 CGROUP_ROOT = Path("/sys/fs/cgroup")
 PAGE = os.sysconf("SC_PAGE_SIZE")
 
@@ -142,14 +144,14 @@ def host_mem() -> dict[str, int]:
         "total": total,
         "available": avail,
         "free": free,
-        # "used" the way `free` computes it: total - free - buffers/cache reclaimable
+        # Explicit legacy cache-excluding formula; not modern free(1)'s used.
         "used": total - free - mi.get("Buffers", 0) - mi.get("Cached", 0) - mi.get("SReclaimable", 0),
         "committed": mi.get("Committed_AS", 0),
     }
 
 
 def proc_mem(pid: int) -> dict[str, int | None]:
-    """RSS from statm (always readable) and PSS/USS from smaps_rollup (root only).
+    """RSS from statm and PSS/USS from smaps_rollup when permissions allow.
 
     PSS matters here: the 10 shims and 10 proxies are the same binary, so their
     RSS figures triple-count shared text. PSS divides shared pages by the number
@@ -222,6 +224,7 @@ class ProcInfo:
     swap: int | None
     container: str | None = None  # which container this shim/proxy belongs to
     inside_container_cgroup: bool = False
+    samples: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -242,7 +245,7 @@ class CgroupMem:
 
     @property
     def working_set(self) -> int:
-        """What `docker stats` shows: charged bytes minus reclaimable page cache."""
+        """Docker-style working-set heuristic: charged bytes minus inactive_file."""
         return max(0, self.current - self.inactive_file)
 
 
@@ -262,11 +265,12 @@ class Service:
     cg: CgroupMem = field(default_factory=CgroupMem)
     procs: list[ProcInfo] = field(default_factory=list)   # shim + proxy for this one
     processes: list[dict] = field(default_factory=list)   # in-container processes
+    provenance: dict = field(default_factory=dict)
 
     @property
     def host_tax(self) -> int:
         """Shim + proxy cost attributable to this container (PSS where available)."""
-        return sum(best(p) for p in self.procs)
+        return sum(best(p) for p in self.procs if not p.inside_container_cgroup)
 
     @property
     def total(self) -> int:
@@ -276,6 +280,16 @@ class Service:
 def best(p: ProcInfo) -> int:
     v = p.pss if p.pss is not None else p.rss
     return v or 0
+
+
+def memory_metric(procs) -> str:
+    """Never label a partial PSS / RSS sum as PSS."""
+    values = [p.pss if isinstance(p, ProcInfo) else p.get("pss") for p in procs]
+    if not values:
+        return "unavailable"
+    if all(v is not None for v in values):
+        return "PSS"
+    return "mixed PSS/RSS" if any(v is not None for v in values) else "RSS"
 
 
 # --------------------------------------------------------------------------- #
@@ -309,7 +323,9 @@ def cgroup_dir_by_id(cid: str) -> Path | None:
 
 def collect_cgroup(d: Path) -> CgroupMem:
     st = read_kv(d / "memory.stat")
-    cur = read_int(d / "memory.current") or 0
+    cur = read_int(d / "memory.current")
+    if cur is None or not {"anon", "file", "inactive_file"} <= st.keys():
+        die(f"missing required cgroup memory data: {d}")
     kernel = st.get("kernel")
     if kernel is None:  # older kernels: approximate from the components
         kernel = (
@@ -370,27 +386,37 @@ def collect_docker_procs(samples: int = 3, interval: float = 2.0) -> list[ProcIn
     """
     obs: dict[int, dict[str, list[int | None]]] = {}
     meta: dict[int, tuple[str, str, str]] = {}
+    expected = None
     for i in range(max(1, samples)):
         if i:
             time.sleep(interval)
+        observed = set()
         for pid in all_pids():
             c = classify(pid)
             if not c:
                 continue
             kind, comm = c
+            observed.add(pid)
             m = proc_mem(pid)
+            if m["rss"] is None:
+                die(f"cannot read RSS for Docker process {pid}; retry on a stable host")
             slot = obs.setdefault(pid, {k: [] for k in ("rss", "pss", "private", "swap")})
             for k in slot:
                 slot[k].append(m[k])
             meta.setdefault(pid, (kind, comm, proc_cgroup(pid)))
+        if expected is not None and observed != expected:
+            die("Docker processes changed during sampling; retry on a stable host")
+        expected = observed
 
     out = []
     for pid, slot in obs.items():
         kind, comm, cg = meta[pid]
         out.append(ProcInfo(
             pid=pid, kind=kind, comm=comm, cgroup=cg,
-            rss=_median(slot["rss"]), pss=_median(slot["pss"]),
+            rss=_median(slot["rss"]),
+            pss=_median(slot["pss"]) if all(v is not None for v in slot["pss"]) else None,
             private=_median(slot["private"]), swap=_median(slot["swap"]),
+            samples=[{k: slot[k][i] for k in slot} for i in range(len(slot["rss"]))],
         ))
     out.sort(key=lambda p: p.pid)
     return out
@@ -407,8 +433,12 @@ def in_container_procs(cid: str) -> list[dict]:
 
 
 def discover_services() -> list[Service]:
+    config = json.loads(docker("compose", "-f", str(ROOT / "docker-compose.yml"),
+                               "config", "--format", "json"))
     fmt = "{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Label \"memtest.lang\"}}\t{{.Label \"memtest.base\"}}\t{{.Status}}\t{{.Ports}}"
-    raw = docker("ps", "-a", "--filter", "label=memtest.lang", "--format", fmt)
+    raw = docker("ps", "-a", "--no-trunc", "--filter", "label=memtest.lang",
+                 "--filter", f"label=com.docker.compose.project={config['name']}",
+                 "--format", fmt)
     svcs = []
     for line in raw.splitlines():
         f = line.split("\t")
@@ -428,21 +458,21 @@ def hit(port: str, timeout: float = 3.0) -> tuple[bool, str]:
     url = f"http://127.0.0.1:{port}/api/hello"
     try:
         with urllib.request.urlopen(url, timeout=timeout) as r:
-            return r.status == 200, r.read(64).decode("utf-8", "replace").strip()
+            body = r.read(64)
+            return r.status == 200 and body == b"Hello World", body.decode("utf-8", "replace")
     except (urllib.error.URLError, OSError, TimeoutError) as e:
         return False, f"{type(e).__name__}: {e}"
 
 
 def warm(svcs: list[Service], n: int) -> None:
-    """Force lazy init (JIT tiers, GC heaps, thread pools) to actually happen.
-
-    Without this the .NET and Node numbers are pre-JIT fiction.
-    """
+    """Exercise the endpoint serially; this does not establish steady state."""
     for s in svcs:
         if not s.port:
             continue
         for _ in range(n):
-            hit(s.port, timeout=5.0)
+            ok, body = hit(s.port, timeout=5.0)
+            if not ok:
+                die(f"{s.name}: warm-up failed: {body}")
 
 
 def wait_ready(svcs: list[Service], timeout: float = 60.0) -> None:
@@ -452,6 +482,8 @@ def wait_ready(svcs: list[Service], timeout: float = 60.0) -> None:
         pending = [s for s in pending if not hit(s.port, timeout=1.0)[0]]
         if pending:
             time.sleep(1.0)
+    if pending:
+        die("endpoints not ready: " + ", ".join(s.name for s in pending))
 
 
 # --------------------------------------------------------------------------- #
@@ -499,6 +531,7 @@ def environment() -> dict:
         ("cgroup_driver", "{{.CgroupDriver}}"),
         ("cgroup_version", "{{.CgroupVersion}}"),
         ("runtime", "{{.DefaultRuntime}}"),
+        ("id", "{{.ID}}"),
         ("rootless", "{{.SecurityOptions}}"),
     ):
         info[k] = d("info", "--format", tmpl)
@@ -513,6 +546,9 @@ def environment() -> dict:
         # our own smaps_rollup is always readable and would give a false positive.
         "have_pss": False,
         "euid": os.geteuid(),
+        "boot_id": Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
+        "epoch": time.time(),
+        "host_used_formula": "MemTotal-MemFree-Buffers-Cached-SReclaimable",
     }
 
 
@@ -523,20 +559,17 @@ def environment() -> dict:
 def cmd_baseline(args) -> int:
     svcs = [s for s in discover_services() if "Up" in s.status]
     if svcs:
-        print(
-            "warning: %d memtest container(s) are still running; a baseline taken now\n"
-            "         will already include them. Run `docker compose down` first.\n"
-            % len(svcs),
-            file=sys.stderr,
-        )
+        die("benchmark containers are running; stop them before taking a baseline")
     procs = collect_docker_procs(args.samples)
     env = environment()
-    env["have_pss"] = any(p.pss is not None for p in procs)
+    env["have_pss"] = memory_metric(procs) == "PSS"
     snap = {
         "env": env,
         "host_mem": host_mem(),
         "docker_procs": [asdict(p) for p in procs],
-        "docker_procs_total_pss": sum(best(p) for p in procs),
+        "docker_procs_total": sum(best(p) for p in procs),
+        "docker_procs_metric": memory_metric(procs),
+        "samples": args.samples,
         "running_memtest_containers": len(svcs),
         "epoch": time.time(),
     }
@@ -546,7 +579,7 @@ def cmd_baseline(args) -> int:
     print(f"baseline saved -> {BASELINE.relative_to(ROOT)}")
     print(f"  host used          : {mib(hm['used'])} MiB of {mib(hm['total'])} MiB")
     print(f"  docker daemon procs: {len(procs)} process(es), "
-          f"{mib(snap['docker_procs_total_pss'])} MiB")
+          f"{mib(snap['docker_procs_total'])} MiB ({snap['docker_procs_metric']})")
     return 0
 
 
@@ -554,9 +587,39 @@ def cmd_baseline(args) -> int:
 # report
 # --------------------------------------------------------------------------- #
 
+def cmd_inventory(args) -> int:
+    """Probe versions separately: exec would otherwise pollute measured cgroups."""
+    images = {}
+    for s in discover_services():
+        if "Up" not in s.status:
+            die("start the benchmark containers before recording inventory")
+        ins = json.loads(docker("inspect", s.container_id))[0]
+        record = {
+            "os_release": docker("exec", s.container_id, "cat", "/etc/os-release").strip(),
+        }
+        version_cmd = {
+            "python": ("python3", "--version"), "typescript": ("node", "--version"),
+            "csharp": ("dotnet", "--list-runtimes"),
+        }.get(s.lang)
+        if version_cmd:
+            record["runtime_version"] = docker("exec", s.container_id, *version_cmd).strip()
+        else:
+            record["runtime_version"] = "compiler version not collected"
+            record["binary_sha256"] = docker(
+                "exec", s.container_id, "sha256sum", "/usr/local/bin/hello").split()[0]
+        images[ins["Image"]] = record
+    if not images:
+        die("no benchmark containers found")
+    REPORTS.mkdir(exist_ok=True)
+    INVENTORY.write_text(json.dumps({"epoch": time.time(), "images": images}, indent=2) + "\n")
+    print("Inventory saved. Stop the stack, take a baseline, and start it again before reporting.")
+    return 0
+
+
 def attribute_procs(svcs: list[Service], procs: list[ProcInfo]) -> list[ProcInfo]:
     """Assign each shim/proxy to a container; return the leftover shared procs."""
-    by_id = {s.container_id: s for s in svcs}
+    for s in svcs:
+        s.procs.clear()
     long_ids = {}
     for s in svcs:
         full = docker("inspect", "-f", "{{.Id}}", s.container_id, check=False).strip()
@@ -566,6 +629,12 @@ def attribute_procs(svcs: list[Service], procs: list[ProcInfo]) -> list[ProcInfo
 
     shared = []
     for p in procs:
+        p.container = None
+        p.inside_container_cgroup = any(
+            p.cgroup and (CGROUP_ROOT / p.cgroup.lstrip("/")) == Path(path)
+            or p.cgroup and Path(path) in (CGROUP_ROOT / p.cgroup.lstrip("/")).parents
+            for path in cgroup_paths
+        )
         if p.kind in SHARED_KINDS:
             shared.append(p)
             continue
@@ -589,324 +658,321 @@ def attribute_procs(svcs: list[Service], procs: list[ProcInfo]) -> list[ProcInfo
             shared.append(p)
             continue
         p.container = owner.name
-        p.inside_container_cgroup = bool(
-            owner.cg.path and p.cgroup and Path(owner.cg.path).name in p.cgroup
-        )
         owner.procs.append(p)
     return shared
 
 
 def collect(requests: int, settle: float = 2.0, samples: int = 3) -> dict:
     env = environment()
+    if env["docker"]["cgroup_version"] != "2":
+        die("this report requires a local Linux Docker daemon with cgroup v2")
     svcs = discover_services()
-    if not svcs:
-        die("no memtest containers found -- run `docker compose up -d --build` first")
-
-    running = [s for s in svcs if "Up" in s.status]
-    wait_ready(running)
-    if requests > 0:
-        warm(running, requests)
-        time.sleep(settle)
-
+    config = json.loads(docker("compose", "-f", str(ROOT / "docker-compose.yml"),
+                               "config", "--format", "json"))
+    expected = set(config["services"])
+    if {s.name for s in svcs} != expected or len(svcs) != len(expected):
+        die("incomplete or duplicate benchmark matrix; expected: " + ", ".join(sorted(expected)))
+    inventory = json.loads(INVENTORY.read_text()) if INVENTORY.exists() else None
+    if not inventory:
+        die("record versions with `scripts/report.sh inventory`, then stop/start the stack")
     for s in svcs:
-        s.image_size = int(
-            docker("image", "inspect", "-f", "{{.Size}}", s.image, check=False).strip() or 0
-        )
-        if "Up" not in s.status:
-            continue
-        s.pid = int(docker("inspect", "-f", "{{.State.Pid}}", s.container_id).strip() or 0)
-        d = (cgroup_dir_for(s.pid) if s.pid else None) or cgroup_dir_by_id(s.container_id)
-        if d:
-            s.cg = collect_cgroup(d)
+        ins = json.loads(docker("inspect", s.container_id))[0]
+        state = ins["State"]
+        if not state["Running"] or state.get("Paused") or state.get("Restarting"):
+            die(f"{s.name}: container must be running and unpaused")
+        s.pid = state["Pid"]
+        s.image = ins["Image"]  # immutable running image, not a possibly retagged name
+        record = inventory["images"].get(s.image)
+        if record is None:
+            die(f"{s.name}: running image is absent from inventory; record inventory again")
+        # Docker timestamps include nanoseconds, beyond strptime's precision.
+        stamp = re.sub(r"(\.\d{6})\d+", r"\1", state["StartedAt"])
+        started_at = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        if started_at.timestamp() <= inventory["epoch"]:
+            die(f"{s.name}: restart after inventory probes to avoid their cgroup cache charges")
+        img = json.loads(docker("image", "inspect", s.image))[0]
+        s.image_size = img["Size"]
+        s.provenance = {
+            **record, "inventory_epoch": inventory["epoch"],
+            "image_id": s.image, "repo_digests": img.get("RepoDigests", []),
+            "architecture": img.get("Architecture"), "started_at": state["StartedAt"],
+            "restart_count": ins["RestartCount"], "user": ins["Config"].get("User"),
+            "limits": {k: ins["HostConfig"].get(k) for k in
+                       ("Memory", "MemorySwap", "NanoCpus", "CpuQuota", "CpusetCpus")},
+        }
+        labels = ins["Config"].get("Labels", {})
+        expected_labels = config["services"][s.name]["labels"]
+        if any(labels.get(k) != expected_labels[k] for k in ("memtest.lang", "memtest.base")):
+            die(f"{s.name}: runtime/base labels do not match Compose")
+        d = cgroup_dir_for(s.pid) or cgroup_dir_by_id(s.container_id)
+        if not d or s.container_id not in str(d):
+            die(f"{s.name}: cannot identify its local cgroup; run on the Docker host")
+        s.cg.path = str(d)
+        if not s.port:
+            die(f"{s.name}: no published endpoint port")
+    wait_ready(svcs)
+    warm(svcs, requests)
+    for s in svcs:
+        s.http_ok, s.http_body = hit(s.port)
+        if not s.http_ok:
+            die(f"{s.name}: endpoint validation failed: {s.http_body}")
+    # Version probes ran in an earlier container lifetime. No exec during report.
+    time.sleep(settle)
+    started = time.time()
+    for s in svcs:
+        s.cg = collect_cgroup(Path(s.cg.path))
         s.processes = in_container_procs(s.container_id)
-        if s.port:
-            s.http_ok, s.http_body = hit(s.port)
-
     procs = collect_docker_procs(samples)
-    env["have_pss"] = any(p.pss is not None for p in procs)
+    if not any(p.kind == "dockerd" for p in procs):
+        die("no local dockerd process visible; cannot measure host overhead")
+    env["have_pss"] = memory_metric(procs) == "PSS"
     shared = attribute_procs(svcs, procs)
-
+    env["host_mem"] = host_mem()
+    env["epoch"] = time.time()
+    env["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S %z")
+    for s in svcs:
+        ins = json.loads(docker("inspect", s.container_id))[0]
+        if (not ins["State"]["Running"] or ins["State"].get("Paused")
+                or ins["State"]["Pid"] != s.pid
+                or ins["State"]["StartedAt"] != s.provenance["started_at"]
+                or ins["RestartCount"] != s.provenance["restart_count"]):
+            die(f"{s.name}: container changed during measurement; retry")
     base = json.loads(BASELINE.read_text()) if BASELINE.exists() else None
-
     return {
-        "env": env,
-        "services": svcs,
-        "shared_procs": shared,
-        "all_docker_procs": procs,
-        "baseline": base,
-        "requests_per_service": requests,
-        "samples": samples,
+        "schema_version": 2, "env": env, "services": svcs,
+        "shared_procs": shared, "all_docker_procs": procs, "baseline": base,
+        "requests_per_service": requests, "settle_seconds": settle, "samples": samples,
+        "sample_interval_seconds": 2.0, "measurement_started_epoch": started,
+        "measurement_finished_epoch": env["epoch"],
     }
+
+
+def accounting(data: dict) -> dict:
+    up = [s for s in data["services"] if "Up" in s.status]
+    outside = [p for p in data["all_docker_procs"] if not p.inside_container_cgroup]
+    assigned = [p for p in outside if p.container is not None and p.kind in PER_CONTAINER_KINDS]
+    shared = [p for p in outside if p.kind in SHARED_KINDS]
+    unassigned = [p for p in outside if p.kind in PER_CONTAINER_KINDS and p.container is None]
+    ws = sum(s.cg.working_set for s in up)
+    tax, daemon = sum(map(best, assigned)), sum(map(best, shared))
+    return {
+        "containers_working_set": ws, "containers_current": sum(s.cg.current for s in up),
+        "containers_swap": sum(s.cg.swap for s in up),
+        "attributed_host_tax": tax, "shared_daemon": daemon,
+        "unattributed_host_processes": sum(map(best, unassigned)),
+        "estimated_total": ws + tax + daemon,
+        "host_metric": memory_metric(assigned + shared),
+    }
+
+
+def baseline_issues(data: dict) -> list[str]:
+    base = data.get("baseline")
+    if not base:
+        return ["No baseline recorded."]
+    issues = []
+    env, before = data["env"], base["env"]
+    if base.get("running_memtest_containers") != 0:
+        issues.append("Baseline was not taken with the benchmark stopped.")
+    if not before.get("boot_id") or before.get("boot_id") != env.get("boot_id"):
+        issues.append("Baseline boot identity is missing or differs.")
+    if before.get("host_used_formula") != env.get("host_used_formula"):
+        issues.append("Baseline host-memory formula is missing or differs.")
+    if before.get("docker") != env.get("docker"):
+        issues.append("Docker environment differs from baseline.")
+    now_procs = data["all_docker_procs"]
+    old_procs = base.get("docker_procs", [])
+    metric = memory_metric(now_procs)
+    if metric not in ("PSS", "RSS") or memory_metric(old_procs) != metric:
+        issues.append("Baseline and current host metrics differ or have partial PSS coverage.")
+    old_daemons = {(p["kind"], p["pid"]) for p in old_procs if p["kind"] in SHARED_KINDS}
+    new_daemons = {(p.kind, p.pid) for p in now_procs if p.kind in SHARED_KINDS}
+    if old_daemons != new_daemons or not new_daemons:
+        issues.append("Shared daemon process identities differ or are unavailable.")
+    if any(p["kind"] in PER_CONTAINER_KINDS for p in old_procs):
+        issues.append("Baseline contains other container shims/proxies.")
+    if any(p.kind in PER_CONTAINER_KINDS and p.container is None for p in now_procs):
+        issues.append("Current sample contains unattributed shims/proxies.")
+    if "epoch" not in base:
+        issues.append("Baseline age is unknown.")
+    elif base["epoch"] > env.get("epoch", 0):
+        issues.append("Baseline is newer than the measurement.")
+    return issues
 
 
 def render(data: dict) -> str:
     env, svcs = data["env"], data["services"]
-    shared, base = data["shared_procs"], data["baseline"]
     up = [s for s in svcs if "Up" in s.status]
+    totals = accounting(data)
+    metric = totals["host_metric"]
+    base = data.get("baseline")
+    issues = baseline_issues(data)
     L: list[str] = []
     A = L.append
-
-    metric = "PSS" if env["have_pss"] else "RSS"
-
-    A("# Docker memory report: 10 minimal `/api/hello` services")
+    A(f"# Docker memory report: {len(up)} minimal `/api/hello` services")
     A("")
-    A(f"_{env['timestamp']}_ &middot; kernel `{env['kernel']}` &middot; "
-      f"{env['cpus']} CPUs &middot; docker `{env['docker']['server_version']}` "
-      f"(cgroup {env['docker']['cgroup_version']}, driver `{env['docker']['cgroup_driver']}`, "
-      f"storage `{env['docker']['storage_driver']}`)")
+    A(f"_{env['timestamp']}_ · kernel `{env['kernel']}` · {env['cpus']} CPUs · "
+      f"Docker `{env['docker']['server_version']}` · cgroup {env['docker']['cgroup_version']}")
     A("")
-    A(f"Host-side processes are the **median of {data['samples']} samples** taken 2s apart; "
-      "dockerd's RSS swings tens of MiB as its scavenger releases startup allocations, "
-      "so a single reading is noise.")
+    A(f"Idle after **{data['requests_per_service']} sequential warm-up requests per service**, "
+      f"readiness/validation requests, and **{data.get('settle_seconds', 'unrecorded')} seconds** "
+      "of settling. This does not establish steady state or memory under concurrent load.")
     A("")
-    A(f"Each service was warmed with **{data['requests_per_service']} requests** before "
-      "measurement, so runtimes that allocate lazily (.NET JIT tiers, V8, CPython "
-      "imports) are shown in their real steady state, not pre-first-request.")
-    if not env["have_pss"]:
+    A(f"Container cgroups are sampled once, sequentially. Host processes use per-process "
+      f"medians of **{data['samples']} samples**, {data.get('sample_interval_seconds', 2)}s apart. "
+      "Their sum is not a simultaneous snapshot or a median of stack totals.")
+    A("")
+    if metric != "PSS":
+        A(f"> Host totals use **{metric}**. RSS includes shared resident pages in every "
+          "process; mixed totals must not be presented as PSS. Missing PSS is not zero.")
         A("")
-        A("> **Running unprivileged:** `/proc/<pid>/smaps_rollup` is unreadable, so "
-          "host-side daemon processes are reported as **RSS**. Because the 10 shims and "
-          "10 proxies are the same binaries, RSS double-counts their shared text — the "
-          "host-tax figures below are therefore an **over**estimate. Re-run under "
-          "`sudo` for PSS.")
-    A("")
 
-    # ---- 1. per-service ---------------------------------------------------- #
     A("## 1. Per-container memory")
     A("")
-    A("`working set` is what `docker stats` reports (`memory.current` less reclaimable "
-      "page cache) and is the number to compare. `anon` is the runtime's own heap/stack; "
-      "`file` is page cache charged to the cgroup (mostly the mapped binary and libs); "
-      "`kernel` is slab + page tables + socket buffers the kernel charged to it.")
+    A("WS = max(0, memory.current − inactive_file), the usual Docker CLI cache adjustment. "
+      "This is a charged-memory heuristic, not an application's minimum RAM requirement. "
+      "anon/file/kernel describe raw current memory, not additive components of WS. "
+      "Tasks include threads; peak is the cgroup's recorded lifetime peak, not this run's peak.")
+    A("")
+    rows = [[s.name, mib(s.cg.current), mib(s.cg.working_set), mib(s.cg.anon),
+             mib(s.cg.file), mib(s.cg.kernel), mib(s.cg.swap), mib(s.cg.peak),
+             str(s.cg.pids), mib(s.host_tax), mib(s.total), "ok" if s.http_ok else "FAIL"]
+            for s in up]
+    A(table(["service", "current", "WS", "anon", "file", "kernel", "swap", "peak",
+             "tasks", "host tax", "estimate", "endpoint"], rows, "lrrrrrrrrrrl"))
+    A("")
+    A(f"Memory is MiB. Host tax is attributed shim/proxy {metric} outside container "
+      "cgroups. Estimate = WS + host tax; shared daemons are added only in section 4.")
+    A("")
+
+    A("## 2. Alpine vs Ubuntu")
+    A("")
+    rows = []
+    for lang in sorted({s.lang for s in up}):
+        a = next((s for s in up if s.lang == lang and s.base == "alpine"), None)
+        u = next((s for s in up if s.lang == lang and s.base == "ubuntu"), None)
+        if a and u:
+            rows.append([lang, mib(a.cg.working_set), mib(u.cg.working_set),
+                         f"{(u.cg.working_set - a.cg.working_set) / MIB:+.1f}",
+                         mib(a.image_size), mib(u.image_size)])
+    A(table(["language", "Alpine WS", "Ubuntu WS", "Ubuntu − Alpine", "Alpine image", "Ubuntu image"],
+            rows, "lrrrrr"))
+    A("")
+    A("Image figures are Docker image inspect .Size for the running image ID, in MiB. "
+      "They are not unique disk usage or download sizes; shared layers prevent summing "
+      "them into a physical disk total. These are packaged-runtime comparisons, not "
+      "controlled tests of libc alone.")
+    A("")
+
+    A("## 3. Host-side processes")
+    A("")
+    A("All discovered Docker-named processes are shown for audit. Only attributed "
+      "shims/proxies enter service totals. Shared dockerd/containerd memory is global "
+      "to the host and may also serve unrelated workloads.")
+    A("")
+    rows = []
+    for kind in DAEMON_PATTERNS:
+        ps = [p for p in data["all_docker_procs"] if p.kind == kind]
+        if ps:
+            rows.append([kind, str(len(ps)), mib(sum(p.rss or 0 for p in ps)),
+                         mib(sum(p.pss for p in ps)) if all(p.pss is not None for p in ps) else "n/a",
+                         memory_metric(ps)])
+    A(table(["process", "count", "RSS", "PSS (complete only)", "coverage"], rows, "lrrrl"))
+    A("")
+    excluded = [p for p in data["all_docker_procs"]
+                if p.kind in PER_CONTAINER_KINDS and p.container is None]
+    if excluded:
+        A(f"> {len(excluded)} unattributed shim/proxy processes are excluded from the stack total "
+          f"({mib(totals['unattributed_host_processes'])} MiB outside its cgroups).")
+        A("")
+    if any(p.inside_container_cgroup for p in data["all_docker_procs"]):
+        A("> Host processes inside a measured container cgroup are excluded from host tax "
+          "and the shared-daemon addition to avoid counting them twice.")
+        A("")
+
+    A("## 4. Estimated footprint and baseline comparison")
+    A("")
+    A(table(["component", "MiB"], [
+        ["Container working sets", mib(totals["containers_working_set"])],
+        ["Attributed host tax", mib(totals["attributed_host_tax"])],
+        ["Shared daemons (entire measured footprint)", mib(totals["shared_daemon"])],
+        ["Estimated total including shared daemons", mib(totals["estimated_total"])],
+    ], "lr"))
+    A("")
+    A(f"Raw container current memory: **{mib(totals['containers_current'])} MiB**; "
+      f"subtracted inactive_file: **{mib(totals['containers_current'] - totals['containers_working_set'])} MiB**; "
+      f"container swap: **{mib(totals['containers_swap'])} MiB**, excluded from RAM totals.")
+    A("")
+    A("This combines cgroup charges with process PSS/RSS, which use different shared-page "
+      "accounting. It excludes some host kernel/network allocations and is not an exact "
+      "physical-memory total. The entire shared daemon footprint is not the incremental "
+      "cost of starting these containers.")
+    A("")
+    hm = env["host_mem"]
+    if base:
+        bhm = base["host_mem"]
+        delta = hm["used"] - bhm["used"]
+        A(table(["host measure", "baseline MiB", "now MiB", "delta MiB"], [
+            ["Cache-excluding used", mib(bhm["used"]), mib(hm["used"]), f"{delta / MIB:+.1f}"],
+            ["MemAvailable", mib(bhm["available"]), mib(hm["available"]),
+             f"{(hm['available'] - bhm['available']) / MIB:+.1f}"],
+        ], "lrrr"))
+        A("")
+        A("Cache-excluding used = MemTotal − MemFree − Buffers − Cached − SReclaimable "
+          "(not modern free(1)'s used). Host deltas include unrelated activity and are "
+          "not ground truth for this stack.")
+        A("")
+        if issues:
+            A("> **Incremental comparison unavailable:** " + " ".join(issues))
+        else:
+            baseline_daemon = sum(p["pss"] if metric == "PSS" else p["rss"]
+                                  for p in base["docker_procs"] if p["kind"] in SHARED_KINDS)
+            incremental = totals["estimated_total"] - baseline_daemon
+            A(f"Estimated increase over the stopped-stack baseline: "
+              f"**{mib(incremental)} MiB** = total {mib(totals['estimated_total'])} "
+              f"− baseline shared daemons {mib(baseline_daemon)} ({metric}). "
+              f"Compare this increase with the host delta **{delta / MIB:+.1f} MiB**, "
+              "allowing for different accounting and host activity.")
+        if base.get("epoch") is not None:
+            age = env.get("epoch", base["epoch"]) - base["epoch"]
+            A("")
+            A(f"Baseline age at measurement: {age / 60:.1f} minutes. "
+              "Long gaps, builds, and unrelated work weaken the comparison.")
+    else:
+        A("No baseline recorded; no incremental stack cost can be inferred.")
+    A("")
+
+    A("## 5. Provenance and limitations")
     A("")
     rows = []
     for s in up:
-        rows.append([
-            s.name, s.lang, s.base,
-            mib(s.cg.working_set), mib(s.cg.anon), mib(s.cg.file), mib(s.cg.kernel),
-            mib(s.cg.peak), str(s.cg.pids), mib(s.host_tax), mib(s.total),
-            "ok" if s.http_ok else "FAIL",
-        ])
-    A(table(
-        ["service", "lang", "base", "working set", "anon", "file", "kernel",
-         "peak", "procs", "host tax", "TOTAL", "/api/hello"],
-        rows,
-        align="lllrrrrrrrrl",
-    ))
+        p = s.provenance
+        version = p.get("runtime_version", "unrecorded").replace("\n", "; ").replace("|", "/")
+        rows.append([s.name, version, p.get("image_id", s.image)])
+    A(table(["service", "runtime", "running image ID"], rows))
     A("")
-    A(f"All memory values are MiB. `host tax` = this container's containerd-shim + "
-      f"docker-proxy ({metric}); `TOTAL` = working set + host tax.")
+    A("JSON also records OS release, start time, architecture, configured limits, and "
+      "compiled-binary hashes when collected. Version probes are recorded by image ID "
+      "before restarting the stack, to avoid polluting measured cgroups. Compiler "
+      "versions for Rust/Go are not inferred from mutable Dockerfile tags.")
     A("")
-
-    down = [s for s in svcs if "Up" not in s.status]
-    if down:
-        A(f"> Not running: {', '.join(f'`{s.name}` ({s.status})' for s in down)}")
-        A("")
-
-    bad = [s for s in up if not s.http_ok]
-    if bad:
-        A("> **Endpoint failures:** " + "; ".join(f"`{s.name}`: {s.http_body}" for s in bad))
-        A("")
-
-    # ---- 2. alpine vs ubuntu ---------------------------------------------- #
-    A("## 2. Alpine vs Ubuntu, per language")
+    A("- Versions, package builds, allocator, linking, server implementation and GC policy "
+      "can all affect a row. Matching a major version does not isolate the base OS.")
+    A("- Shared file pages are charged to a cgroup, not divided like PSS; startup order "
+      "and other workloads can change attribution. Settling does not guarantee cache aging.")
+    A("- CPU/RAM visibility and limits can alter runtime behavior; lower limits do not "
+      "guarantee proportionally lower usage. Repeat comparable runs before ranking small gaps.")
+    A("- The benchmark measures this trivial endpoint while idle after serial traffic. "
+      "It does not compare throughput, latency, or production concurrency.")
     A("")
-    rows = []
-    langs = sorted({s.lang for s in up})
-    for lang in langs:
-        a = next((s for s in up if s.lang == lang and s.base == "alpine"), None)
-        u = next((s for s in up if s.lang == lang and s.base == "ubuntu"), None)
-        if not (a and u):
-            continue
-        dws = u.cg.working_set - a.cg.working_set
-        pct = (dws / a.cg.working_set * 100) if a.cg.working_set else 0
-        rows.append([
-            lang, mib(a.cg.working_set), mib(u.cg.working_set),
-            f"{dws / MIB:+,.1f}", f"{pct:+.1f}%",
-            f"{a.image_size / MIB:,.0f}", f"{u.image_size / MIB:,.0f}",
-            f"{(u.image_size - a.image_size) / MIB:+,.0f}",
-        ])
-    A(table(
-        ["lang", "alpine WS", "ubuntu WS", "Δ WS", "Δ %", "alpine img", "ubuntu img", "Δ img"],
-        rows, align="lrrrrrrr",
-    ))
-    A("")
-    A("WS = working set (MiB), img = image size on disk (MiB).")
-    A("")
-    for bname in ("alpine", "ubuntu"):
-        grp = [s for s in up if s.base == bname]
-        if grp:
-            A(f"- **{bname}** ({len(grp)} services): "
-              f"working set {mib(sum(s.cg.working_set for s in grp))} MiB, "
-              f"images {sum(s.image_size for s in grp) / MIB:,.0f} MiB")
-    A("")
-
-    # ---- 3. language ranking ---------------------------------------------- #
-    A("## 3. Language ranking (working set, lower is better)")
-    A("")
-    rows = [
-        [str(i), s.name, mib(s.cg.working_set), mib(s.cg.anon), str(s.cg.pids),
-         f"{s.image_size / MIB:,.0f}"]
-        for i, s in enumerate(sorted(up, key=lambda x: x.cg.working_set), 1)
-    ]
-    A(table(["#", "service", "working set", "anon", "procs", "image"], rows, align="rlrrrr"))
-    A("")
-
-    # ---- 4. host / daemon overhead ---------------------------------------- #
-    A("## 4. Host-side Docker overhead")
-    A("")
-    A("Memory the stack costs **outside** every container cgroup. `dockerd` and "
-      "`containerd` are paid once; shims and proxies are paid *per container* and "
-      "*per published port* respectively, which is what makes a 10-service stack more "
-      "expensive than `docker stats` suggests.")
-    A("")
-    by_kind: dict[str, list[ProcInfo]] = {}
-    for p in data["all_docker_procs"]:
-        by_kind.setdefault(p.kind, []).append(p)
-    rows = []
-    for kind in ("dockerd", "containerd", "shim", "proxy"):
-        ps = by_kind.get(kind, [])
-        if not ps:
-            continue
-        rows.append([
-            kind, str(len(ps)),
-            mib(sum(p.rss or 0 for p in ps)),
-            mib(sum(p.pss or 0 for p in ps)) if env["have_pss"] else "n/a",
-            mib(sum(best(p) for p in ps)),
-            "once" if kind in SHARED_KINDS else "per container/port",
-        ])
-    A(table(["process", "count", "Σ RSS", "Σ PSS", f"Σ {metric} (used)", "scaling"],
-            rows, align="lrrrrl"))
-    A("")
-    nproxy = len(by_kind.get("proxy", []))
-    nport = len([s for s in up if s.port])
-    if nproxy > nport:
-        A(f"> **{nproxy} `docker-proxy` processes for {nport} published ports** — Docker "
-          "starts one per address family, so every `ports:` entry costs two, binding "
-          "`0.0.0.0` and `::` separately. That doubling is pure overhead on a host with "
-          "no working IPv6. Publishing on an explicit `127.0.0.1:PORT:8080`, or using "
-          "`network_mode: host`, avoids it.")
-        A("")
-
-    shim_dbl = [p for p in data["all_docker_procs"] if p.inside_container_cgroup]
-    if shim_dbl:
-        A(f"> Note: {len(shim_dbl)} shim/proxy process(es) live *inside* a container's "
-          "own cgroup on this host, so their memory is already counted in that "
-          "container's working set. They are excluded from the grand total below to "
-          "avoid double-counting.")
-        A("")
-
-    if base:
-        bd = base["docker_procs_total_pss"]
-        A(f"With the stack **down**, the same processes used {mib(bd)} MiB "
-          f"({len(base['docker_procs'])} process(es)). Bringing 10 containers up added "
-          f"{mib(sum(best(p) for p in data['all_docker_procs']) - bd)} MiB of host-side "
-          "Docker memory.")
-        A("")
-
-    # ---- 5. grand total --------------------------------------------------- #
-    A("## 5. Full-stack total")
-    A("")
-    containers_ws = sum(s.cg.working_set for s in up)
-    containers_cur = sum(s.cg.current for s in up)
-    per_ct = sum(best(p) for p in data["all_docker_procs"]
-                 if p.kind in PER_CONTAINER_KINDS and not p.inside_container_cgroup)
-    shared_mem = sum(best(p) for p in shared if p.kind in SHARED_KINDS)
-    grand = containers_ws + per_ct + shared_mem
-
-    rows = [
-        [f"Containers ({len(up)}) — working set", mib(containers_ws),
-         f"{containers_ws / grand * 100:.0f}%" if grand else "-"],
-        ["Per-container host tax — shims + proxies", mib(per_ct),
-         f"{per_ct / grand * 100:.0f}%" if grand else "-"],
-        ["Shared daemon — dockerd + containerd", mib(shared_mem),
-         f"{shared_mem / grand * 100:.0f}%" if grand else "-"],
-        ["**Grand total**", f"**{mib(grand)}**", "100%"],
-    ]
-    A(table(["layer", f"MiB ({metric} for host procs)", "share"], rows, align="lrr"))
-    A("")
-    A(f"Containers' raw `memory.current` (page cache included) totals "
-      f"{mib(containers_cur)} MiB; the working-set total above excludes "
-      f"{mib(containers_cur - containers_ws)} MiB of reclaimable cache.")
-    A("")
-
-    hm = env["host_mem"]
-    if base:
-        delta = hm["used"] - base["host_mem"]["used"]
-        A("### Cross-check against host RAM")
-        A("")
-        age = time.time() - base.get("epoch", time.time())
-        if age > 600:
-            A(f"> **Baseline is {age / 60:.0f} minutes old.** Host `MemUsed` drifts on its own "
-              "as unrelated processes come and go — measured on this host at roughly "
-              "300+ MiB over 20 minutes, which swamps most of what this report resolves. "
-              "The delta below is therefore only indicative. Re-take the baseline "
-              "immediately before bringing the stack up when the cross-check matters.")
-            A("")
-        A(table(
-            ["measure", "baseline (stack down)", "now (stack up)", "Δ"],
-            [
-                ["MemUsed", mib(base["host_mem"]["used"]), mib(hm["used"]),
-                 f"{delta / MIB:+,.1f}"],
-                ["MemAvailable", mib(base["host_mem"]["available"]), mib(hm["available"]),
-                 f"{(hm['available'] - base['host_mem']['available']) / MIB:+,.1f}"],
-            ],
-            align="lrrr",
-        ))
-        A("")
-        A(f"Bottom-up accounting says **{mib(grand)} MiB**; the host's own MemUsed moved "
-          f"by **{delta / MIB:+,.1f} MiB**.")
-        A("")
-        nhost = len([p for p in data["all_docker_procs"]])
-        if not env["have_pss"] and grand > delta:
-            A(f"The bottom-up figure is the **upper bound**, and the gap is expected: "
-              f"without root it sums **RSS** over {nhost} host-side processes that are "
-              "mostly the same two binaries, so every shared text page is counted once "
-              "per process. The host's MemUsed delta counts each physical page once and "
-              f"is the figure to trust — treat **{delta / MIB:,.0f} MiB** as the real cost "
-              "of this stack. Re-run as `sudo scripts/report.sh report` to replace RSS "
-              "with PSS and close the gap.")
-        else:
-            A("These will not match exactly — the host figure also absorbs unrelated "
-              "activity and kernel allocations no cgroup is charged for — but they should "
-              "agree closely. A large gap means something outside this accounting moved.")
-    else:
-        A("### Cross-check against host RAM")
-        A("")
-        A(f"Host MemUsed is currently {mib(hm['used'])} MiB of {mib(hm['total'])} MiB. "
-          "No baseline found, so the delta attributable to this stack cannot be shown — "
-          "run `scripts/report.sh baseline` with the stack down, then bring it up and "
-          "re-report.")
-    A("")
-
-    # ---- 6. caveats ------------------------------------------------------- #
-    A("## 6. How to read this / caveats")
-    A("")
-    A("- **Working set is not a reservation.** `anon` is real; `file` is page cache the "
-      "kernel will drop under pressure. Set `mem_limit` and these numbers shrink.")
-    A("- **Runtimes size themselves against the host.** Go's GC, .NET's GC heap count "
-      f"and V8's heap all scale with visible CPUs ({env['cpus']} here) and total RAM "
-      f"({mib(hm['total'])} MiB). The same images on a 2-vCPU box measure lower.")
-    A("- **Runtime versions are matched across both bases.** Ubuntu 26.04 ships CPython "
-      "3.14 and Node 22, the same majors as `python:3.14-alpine3.22` and "
-      "`node:22-alpine3.22`; Rust, Go and .NET are built from one toolchain each. So a "
-      "row's alpine/ubuntu gap is base image and libc, not a version difference.")
-    A("- **musl vs glibc is a real variable,** not just image size: alpine builds link "
-      "musl, which allocates differently from glibc. Rust and .NET on alpine are "
-      "genuinely different binaries, not the same binary on a smaller base. Go is the "
-      "exception -- `CGO_ENABLED=0` puts one identical static binary on both.")
-    A("- **Page cache ages.** `working set` excludes only *inactive* file pages. Sampled "
-      "seconds after start, every mapped page is still in the active LRU, so working set "
-      "equals `memory.current` and is at its maximum. Raise `--settle` for a figure "
-      "closer to steady state.")
-    A("- **One-shot sample.** No averaging over time; a GC cycle mid-measurement moves "
-      "a row by megabytes. Re-run to confirm anything surprising.")
+    A("Accounting references: [Docker stats](https://docs.docker.com/reference/cli/docker/container/stats/), "
+      "[cgroup v2](https://docs.kernel.org/admin-guide/cgroup-v2.html), "
+      "[Linux /proc](https://docs.kernel.org/filesystems/proc.html).")
     A("")
     return "\n".join(L) + "\n"
-
-
 def to_json(data: dict) -> str:
     out = dict(data)
+    out["accounting"] = accounting(data)
+    out["baseline_issues"] = baseline_issues(data)
     out["services"] = [
         {**{k: v for k, v in asdict(s).items() if k not in ("cg", "procs")},
          "cgroup": asdict(s.cg),
@@ -941,6 +1007,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("inventory", help="record runtime versions; restart the stack afterwards")
     b = sub.add_parser("baseline", help="snapshot host+daemon memory with the stack DOWN")
     b.add_argument("--samples", type=int, default=5,
                    help="median over N samples of host-side processes (default: 5)")
@@ -949,14 +1016,20 @@ def main() -> int:
                    help="warm-up requests per service before measuring (default: 50)")
     r.add_argument("--settle", type=float, default=2.0,
                    help="seconds to wait after warm-up before sampling (default: 2). "
-                        "Higher values let file pages age into the inactive LRU, which is "
-                        "what makes working set < memory.current.")
+                        "Cache aging and runtime steady state are not guaranteed.")
     r.add_argument("--samples", type=int, default=5,
                    help="median over N samples of host-side processes, 2s apart "
                         "(default: 5). dockerd RSS swings tens of MiB; one sample is noise.")
     r.add_argument("--quiet", action="store_true", help="write files without printing")
     args = ap.parse_args()
-    return {"baseline": cmd_baseline, "report": cmd_report}[args.cmd](args)
+    if hasattr(args, "samples") and args.samples < 1:
+        ap.error("--samples must be at least 1")
+    if args.cmd == "report":
+        if args.requests < 0:
+            ap.error("--requests must be nonnegative")
+        if not math.isfinite(args.settle) or args.settle < 0:
+            ap.error("--settle must be finite and nonnegative")
+    return {"inventory": cmd_inventory, "baseline": cmd_baseline, "report": cmd_report}[args.cmd](args)
 
 
 if __name__ == "__main__":

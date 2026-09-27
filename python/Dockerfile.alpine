@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:1
-# CPython 3.14 -- matches the 3.14.3 that Ubuntu 26.04 ships, so the two
-# variants differ only in base image and libc.
+# Same requested Python minor as Ubuntu; patch level and build may differ.
 FROM python:3.14-alpine3.22
 WORKDIR /app
 COPY app.py ./

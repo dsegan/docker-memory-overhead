@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# CGO_ENABLED=0 makes this a static binary, so the *identical* build output
-# runs on both bases -- Go is the cleanest alpine-vs-ubuntu comparison here.
+# Same static build recipe as Alpine. Compare recorded binary hashes to
+# verify equality; mutable builder tags alone do not guarantee it.
 FROM golang:1.26-alpine3.22 AS build
 WORKDIR /src
 COPY go.mod ./

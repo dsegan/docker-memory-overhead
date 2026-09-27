@@ -5,3 +5,4 @@ typescript/node_modules
 typescript/dist
 csharp/bin
 csharp/obj
+__pycache__/

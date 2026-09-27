@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Same rustc version as the alpine variant; only the runtime base differs.
+# Same requested rustc version; libc target and build environment differ.
 # Built against Debian trixie's glibc, which is older than Ubuntu 26.04's and
 # therefore forward-compatible with it.
 FROM rust:1.93-slim-trixie AS build

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Ubuntu 26.04 ships CPython 3.14.3, matching the alpine variant's 3.14.
+# Use Ubuntu's Python package; record its actual version in each report.
 FROM ubuntu:26.04
 RUN ok=0; for i in 1 2 3 4 5; do apt-get update && apt-get install -y --no-install-recommends python3 \
       && { ok=1; break; }; sleep 3; done; [ "$ok" = 1 ] \

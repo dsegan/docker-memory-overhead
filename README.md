@@ -1,180 +1,173 @@
 # docker-mem-test
 
-Ten minimal containers, each serving exactly one endpoint:
+Ten containers serve `GET /api/hello` with HTTP 200 and the exact body
+`Hello World`. Five languages run on two runtime bases: Alpine 3.22 and
+Ubuntu 26.04. The report estimates **idle memory after serial warm-up**,
+including container cgroups, attributed shims/proxies, and shared Docker daemons.
 
-```
-GET /api/hello  ->  200  "Hello World"
-```
+This is a comparison of these server implementations and packaged runtime
+builds. It is not a production capacity test or an isolated experiment on libc.
+See [the report review](docs/report-review.md) for corrections to earlier findings.
 
-Five languages × two runtime bases (**alpine 3.22** and **Ubuntu 26.04**), plus
-tooling that reports the *full* memory cost of running them — containers,
-per-container daemon overhead, and the Docker daemon itself.
+## Matrix
 
-## Layout
-
-```
-rust/  go/  python/  typescript/  csharp/
-    Dockerfile.alpine     # alpine 3.22 runtime base
-    Dockerfile.ubuntu     # ubuntu 26.04 runtime base
-    <sources>             # shared by both variants
-docker-compose.yml        # all 10 services, ports 8001-8010
-scripts/
-    report.sh             # wrapper (handles sudo for PSS)
-    memreport.py          # the measurement + report generator
-reports/                  # generated: memory-latest.{md,json} + timestamped
-```
-
-| service | port | server |
+| Services | Host ports | Server / requested toolchain |
 |:--|--:|:--|
-| `rust-alpine` / `rust-ubuntu` | 8001 / 8002 | axum 0.8 on tokio (Rust 1.93) |
-| `go-alpine` / `go-ubuntu` | 8003 / 8004 | `net/http` stdlib (Go 1.26) |
-| `python-alpine` / `python-ubuntu` | 8005 / 8006 | `http.server` stdlib (CPython 3.14) |
-| `typescript-alpine` / `typescript-ubuntu` | 8007 / 8008 | `node:http` stdlib (Node 22) |
-| `csharp-alpine` / `csharp-ubuntu` | 8009 / 8010 | ASP.NET Core minimal API (.NET 10) |
+| `rust-alpine` / `rust-ubuntu` | 8001 / 8002 | axum 0.8 + tokio, Rust 1.93 |
+| `go-alpine` / `go-ubuntu` | 8003 / 8004 | net/http, Go 1.26 |
+| `python-alpine` / `python-ubuntu` | 8005 / 8006 | ThreadingHTTPServer, CPython 3.14 |
+| `typescript-alpine` / `typescript-ubuntu` | 8007 / 8008 | node:http, Node 22 |
+| `csharp-alpine` / `csharp-ubuntu` | 8009 / 8010 | ASP.NET Core minimal API, .NET 10 |
 
-Each language uses its own platform's built-in HTTP server so the comparison is
-about *runtime* footprint, not framework choice. Rust is the exception — it has
-no stdlib HTTP server, so axum (the de-facto minimal choice) is used.
-
-All containers run as uid 65534 (`nobody`) and are **deliberately
-unconstrained** — no `mem_limit`, no `cpus`. The point is to measure what each
-runtime *chooses* to allocate, not what a cap forced it into.
+Both variants share application source, but libraries, linking, build flags and
+patch versions can differ. All run as UID/GID 65534. Compose sets no CPU or memory
+limit; inherited host/cgroup constraints can still apply. Ports bind to
+127.0.0.1. On the measured Docker configuration this creates one IPv4 proxy per
+service; proxy behavior depends on daemon and network configuration.
 
 ## Usage
 
+Run on the local Linux Docker host, with Compose v2, cgroup v2 and Python 3.9+.
+The script requires Docker socket access and host `/proc` and `/sys/fs/cgroup`
+visibility. Remote daemons and Docker Desktop VM measurements are not supported.
+
+Build **before** taking a baseline so builds are outside the comparison window:
+
 ```bash
-# 1. baseline: host + daemon memory with nothing running
+docker compose build
+docker compose up -d --no-build
+scripts/report.sh inventory
 docker compose down
-scripts/report.sh baseline
-
-# 2. build and start all ten
-docker compose up -d --build
-
-# 3. measure
-scripts/report.sh report                  # 50 warm-up requests per service
-scripts/report.sh report --requests 500   # push runtimes further into steady state
+scripts/report.sh baseline --samples 5
+docker compose up -d --no-build
+scripts/report.sh report --requests 200 --settle 15 --samples 5
 ```
 
-The report lands in `reports/memory-latest.md` (human) and
-`reports/memory-latest.json` (machine), plus a timestamped copy of each.
+The wrapper uses passwordless sudo if available to read PSS. Otherwise it uses
+RSS and labels the result. Use the same privilege level for baseline and report.
+For PSS when sudo requires a password, run both measurement commands explicitly
+under `sudo`.
 
-Sanity check one endpoint by hand:
+Inventory probes runtime versions in the containers and saves them by image ID.
+The stack must be stopped and started afterwards: those probes can populate its
+cgroup's file cache. Report generation does not exec extra processes inside the
+containers. Re-record inventory after rebuilding images; later measurements of
+the same images can reuse it.
+
+Reports are written to `reports/memory-latest.{md,json}` and timestamped copies.
+JSON preserves the raw measurements, running image IDs, OS/runtime information,
+configured limits, sampling window, and calculated totals. Generated files are
+gitignored; retain the JSON alongside any results you share.
+
+Repeat the report with identical arguments to assess variation. `--samples`
+only repeats **host-process** measurements; each container cgroup is read once.
+Fresh-start replicates require another down/baseline/up cycle. Neither repeated
+warm-ups nor a fixed settling time proves steady state.
+
+The collector rejects incomplete matrices, stopped/paused containers, wrong
+endpoint bodies, failed warm-up requests, unavailable required cgroup data,
+container restarts, and host process churn during sampling. An invalid baseline
+does not suppress current measurements; it disables the incremental comparison.
 
 ```bash
-curl -s localhost:8003/api/hello   # -> Hello World
+curl -s localhost:8003/api/hello
+python3 -m unittest discover -s tests -v
 ```
 
-## What the report measures
+## What the numbers mean
 
-`docker stats` only shows layer 1 of three. All three are reported separately
-and summed:
+The container table includes raw `memory.current`, anonymous memory, file cache,
+kernel charges, swap, lifetime peak and task count. Tasks include threads.
+WS is `max(0, memory.current - inactive_file)`, following the usual Docker CLI
+adjustment. Anonymous/file/kernel values describe raw current memory, so they
+do not add up to WS. These sequential kernel reads are not atomic.
+[Docker documents the cache adjustment and task count.](https://docs.docker.com/reference/cli/docker/container/stats/)
 
-1. **Container cgroups** — read straight from cgroup v2 (`memory.current`,
-   `memory.stat`, `memory.peak`), broken into `anon` (the runtime's real
-   heap/stack), `file` (page cache charged to the cgroup — mapped binaries and
-   libraries), and `kernel` (slab, page tables, socket buffers). *Working set* =
-   `memory.current − inactive_file`, which is the number `docker stats` prints
-   and the one to compare across rows.
+WS is a useful comparison metric, but it is not all physical RAM attributable
+to an application. Shared pages are charged to a cgroup rather than divided
+among users, so startup order and other workloads can affect the rows. File
+cache includes more than mapped binaries; inactive does not mean unused.
+[Linux documents memory ownership and cgroup counters.](https://docs.kernel.org/admin-guide/cgroup-v2.html)
 
-2. **Per-container host tax** — Docker spawns a `containerd-shim-runc-v2` for
-   every container and a `docker-proxy` for every published port. Neither lives
-   in the container's cgroup, so neither appears in `docker stats`. At ten
-   containers this is not a rounding error.
+Host tax adds only shims/proxies attributed to the benchmark and outside its
+cgroups. Unattributed shims/proxies appear separately. Shared dockerd/containerd
+memory is reported in full and may support unrelated work.
 
-3. **Shared daemon** — `dockerd` + `containerd`, paid once regardless of scale.
+PSS divides shared resident pages among the processes mapping them. RSS counts
+the whole resident mapping in each process. Fewer sharers can increase a
+survivor's **PSS**, not its RSS merely through a change in the divisor.
+PSS availability is checked for every sampled process; partial coverage is
+labeled mixed PSS/RSS. Neither metric includes all host kernel overhead.
+[Linux defines RSS and PSS here.](https://docs.kernel.org/filesystems/proc.html)
 
-Host-side processes are measured by **PSS** when the script can read
-`/proc/<pid>/smaps_rollup` (root only). PSS divides shared pages by the number
-of processes sharing them, which is the honest way to total twenty copies of the
-same two binaries. Without root the script falls back to RSS, says so in the
-report, and its host-tax figures are then an overestimate.
+The combined estimate is:
 
-Finally the bottom-up total is **cross-checked** against the host's own
-`MemUsed` delta versus the baseline snapshot. The two won't match exactly — the
-host figure also absorbs unrelated activity and kernel allocations charged to no
-cgroup — but they should agree to the same order of magnitude. A wide gap means
-something outside the accounting moved.
+```text
+container working sets + attributed outside-cgroup host tax + shared daemon footprint
+```
 
-## Fairness notes
+It mixes cgroup charges and process residency accounting and is not an exact
+physical-memory total. Swap is reported separately. The comparable incremental
+estimate subtracts the **baseline shared daemon footprint**, using the same
+metric, from this total. Baselines must identify the same boot and daemon
+processes and have no running benchmark containers or other shims/proxies.
 
-Read these before quoting any number.
+Host cache-excluding used memory is explicitly calculated as
+`MemTotal - MemFree - Buffers - Cached - SReclaimable`. This is not modern
+`free`'s used value. Its delta and the change in `MemAvailable` are contextual
+checks, not ground truth: host activity and different cache accounting can
+dominate small effects. The host snapshot is taken after measurement.
 
-- **Runtime versions are matched across both bases.** Ubuntu 26.04 ships CPython
-  3.14.3 and Node 22.22 — the same majors as `python:3.14-alpine3.22` and
-  `node:22-alpine3.22` — so neither needs a third-party apt source, and no row
-  is version-skewed. Rust, Go and .NET are each built from a single toolchain
-  and produce the same output for both bases.
-- **The matrix is pinned to Ubuntu 26.04 and Alpine 3.22 together.** Those two
-  are coupled: Microsoft publishes no Ubuntu 26.04 base for .NET 9
-  (`9.0-resolute` does not exist), so C# runs on **.NET 10**, whose alpine
-  runtime is `alpine3.22` — which is why the whole alpine side is 3.22 rather
-  than 3.21. Changing either base means rechecking both.
-- **musl vs glibc is a real variable, not just image size.** Alpine builds link
-  musl, whose allocator behaves differently from glibc's. Rust and .NET on
-  alpine are genuinely different binaries, not the same binary on a smaller
-  base. Go is the exception — `CGO_ENABLED=0` puts one identical static binary
-  on both, making it the cleanest base-only comparison here.
-- **Runtimes size themselves against the host.** Go's GC, .NET's GC heap count
-  and V8's heap all scale with visible CPU count and total RAM. Numbers from a
-  32 GB / 8-core workstation do not transfer to a 2-vCPU VM.
-- **Page cache ages.** `working set` subtracts only *inactive* file pages.
-  Sampled seconds after start, every mapped page is still in the active LRU, so
-  working set equals `memory.current` and reads high — the C# and TypeScript
-  rows dropped ~15 MiB each between a 1.5 s and a 15 s settle. Use `--settle`.
-- **RSS vs PSS.** Unprivileged, the script sums RSS over ~32 host-side
-  processes that are mostly two distinct binaries, so shared text is counted
-  once per process and the total is an upper bound. Run under `sudo` for PSS,
-  or trust the host `MemUsed` delta, which counts each physical page once.
-- **One-shot sample.** No averaging; a GC cycle landing mid-measurement moves a
-  row by megabytes. Re-run before trusting anything surprising.
+Image sizes are Docker's `image inspect .Size` for the running image ID, with
+storage-driver-dependent semantics. They are not unique disk usage or transfer
+sizes, and summing them double-counts shared layers.
 
-## Findings worth knowing
+## What the existing evidence supports
 
-Measured on this host (8 CPUs, 31 GiB), 10 services, PSS for host-side processes.
+The original PSS snapshot at **2026-09-27 20:54:57 +0200** recorded 124.3 MiB of
+container WS, 68.2 MiB of attributed host processes, and 100.2 MiB of shared
+daemons: a combined estimate of **292.7 MiB**. The baseline used RSS, so the
+original incremental comparison was invalid. These are historical observations,
+not fixed costs.
 
-- **Two `docker-proxy` processes per published port** when you write a bare
-  `"8001:8080"` — Docker binds `0.0.0.0` and `::` separately. Writing
-  `127.0.0.1:8001:8080` halves the count. Measured saving: proxy PSS **38.9 →
-  24.9 MiB**, total host tax **80.4 → 68.2 MiB**. The `::` proxies were the cheap
-  half (~1.3 MiB PSS each, versus ~2.6 for the IPv4 ones) because they never
-  served a request, so the win is real but modest — about 1.2 MiB per container.
-- **Measure this with PSS, not RSS.** RSS made the same change look like a
-  −9.7 MiB saving *and* showed the surviving proxies "growing" 4.0 → 4.8 MiB.
-  That growth was an artifact: with ten fewer processes sharing the same text
-  pages, RSS attributes more to each survivor. PSS shows what actually happened
-  — ten ~1.3 MiB processes disappeared and nothing else moved.
-- **Per-container host tax is ~6.8 MiB** (shim + one proxy, PSS) and barely
-  varies by language. For the lean runtimes it dominates: rust-alpine's
-  container is ~1 MiB, so the shim and proxy cost it ~7× more than the service.
-- **RSS overstates shims by 2.2× and proxies by 1.5×** (shim 92.3 → 41.5 PSS;
-  proxy 58.8 → 38.9). Any "docker overhead" figure summing RSS over 20-30
-  processes is roughly double the truth.
-- **The alpine/ubuntu working-set gap is single-digit MiB; the image-size gap is
-  ~42 MiB.** Base choice is a disk and pull-time decision, not a RAM one. Two
-  exceptions: Python is *cheaper* on Ubuntu (musl costs CPython ~2 MiB), and Node
-  is ~8 MiB cheaper on alpine, because Ubuntu's `nodejs` is a dfsg rebuild
-  against system libraries rather than the official Node build.
-- **Host `MemUsed` is too noisy for small effects.** Two baselines 18 minutes
-  apart, stack down both times, differed by 360 MiB from unrelated activity.
-  Use it as an order-of-magnitude check only; trust per-process figures below
-  ~100 MiB.
-- **dockerd's RSS swings tens of MiB.** Freshly restarted it read 96 → 42 → 50
-  MiB within 15 seconds as Go's scavenger released startup allocations. Hence
-  `--samples`, which takes a median.
+| Language | Alpine WS MiB | Ubuntu WS MiB | Ubuntu − Alpine MiB |
+|:--|--:|--:|--:|
+| C# | 22.1 | 34.1 | +11.9 |
+| Go | 3.6 | 3.4 | −0.2 |
+| Python | 11.1 | 9.6 | −1.5 |
+| Rust | 0.8 | 1.0 | +0.2 |
+| TypeScript / Node | 15.9 | 22.9 | +7.0 |
 
-## Requirements
+Differences are computed before rounding. The C# gap is not single-digit MiB.
+The earlier two-family proxy sample used 80.4 MiB of host tax versus 68.2 MiB
+with IPv4-only bindings, but those runs were not a controlled repeated
+experiment. They do not establish a universal 1.2 MiB saving per container.
 
-- Docker with compose v2, cgroup v2 host, Python 3.9+ on the host.
-- Network access at build time (crates.io, proxy.golang.org, npm, NuGet,
-  archive.ubuntu.com, dl-cdn.alpinelinux.org). Package fetches are wrapped in
-  bounded retries because some hosts resolve registries to unreachable IPv6
-  addresses and fail intermittently.
-- Docker socket access. If you installed the snap and get
-  `permission denied ... /var/run/docker.sock`:
+Live version checks during review found Python **3.14.5 vs 3.14.4** and Node
+**22.22.3 vs 22.22.1**, and .NET **10.0.3 vs 10.0.12** (Alpine vs Ubuntu).
+Matching major versions does not make
+these base-only comparisons. Claims that musl alone caused Python's gap, or
+Ubuntu packaging alone caused Node's gap, are not established by these data.
 
-  ```bash
-  sudo addgroup --system docker
-  sudo adduser "$USER" docker
-  sudo snap disable docker && sudo snap enable docker
-  newgrp docker          # or log out and back in
-  ```
+Docker tags, apt packages and Rust/npm dependency ranges are mutable; no
+Cargo.lock or package-lock.json is committed. Image IDs identify the measured
+artifacts, but rebuilding later need not reproduce them. A controlled follow-up
+should pin image digests and dependency locks, record compiler versions, repeat
+fresh starts in varied order, and report distributions. Go's two Dockerfiles
+request the same static build; recorded binary hashes can verify equality for
+the actual images.
+
+## Layout
+
+```text
+rust/ go/ python/ typescript/ csharp/  # sources + Alpine/Ubuntu Dockerfiles
+docker-compose.yml                  # ten services
+scripts/report.sh                   # optional sudo wrapper
+scripts/memreport.py                 # collector + Markdown/JSON renderer
+tests/test_memreport.py              # accounting and failure-path regression tests
+docs/report-review.md               # audit findings and evidence
+reports/                            # generated local artifacts
+```
+
+Builds require registry and package-repository access. Some apt/apk commands
+retry downloads; not all dependency fetches do.
