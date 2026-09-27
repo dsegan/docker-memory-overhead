@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1
+# Same rustc version as the alpine variant; only the runtime base differs.
+# Built against Debian trixie's glibc, which is older than Ubuntu 26.04's and
+# therefore forward-compatible with it.
+FROM rust:1.93-slim-trixie AS build
+WORKDIR /src
+COPY Cargo.toml ./
+COPY src ./src
+RUN cargo build --release
+
+FROM ubuntu:26.04
+COPY --from=build /src/target/release/hello /usr/local/bin/hello
+ENV PORT=8080
+EXPOSE 8080
+USER 65534:65534
+ENTRYPOINT ["/usr/local/bin/hello"]

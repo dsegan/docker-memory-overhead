@@ -1,0 +1,7 @@
+reports/*.md
+reports/*.json
+rust/target
+typescript/node_modules
+typescript/dist
+csharp/bin
+csharp/obj

@@ -1,0 +1,91 @@
+# 5 languages x 2 runtime bases (alpine 3.22 vs ubuntu 26.04) = 10 services.
+# Every service serves GET /api/hello -> "Hello World" on container port 8080.
+#
+# Deliberately unconstrained: no mem_limit / cpus, so the report measures what
+# each runtime actually chooses to allocate rather than what a cap forced.
+
+x-svc: &svc
+  restart: "no"
+  init: false
+  stop_grace_period: 3s
+
+services:
+  rust-alpine:
+    <<: *svc
+    build: { context: ./rust, dockerfile: Dockerfile.alpine }
+    image: memtest/rust-alpine
+    container_name: memtest-rust-alpine
+    ports: ["8001:8080"]
+    labels: { memtest.lang: rust, memtest.base: alpine }
+
+  rust-ubuntu:
+    <<: *svc
+    build: { context: ./rust, dockerfile: Dockerfile.ubuntu }
+    image: memtest/rust-ubuntu
+    container_name: memtest-rust-ubuntu
+    ports: ["8002:8080"]
+    labels: { memtest.lang: rust, memtest.base: ubuntu }
+
+  go-alpine:
+    <<: *svc
+    build: { context: ./go, dockerfile: Dockerfile.alpine }
+    image: memtest/go-alpine
+    container_name: memtest-go-alpine
+    ports: ["8003:8080"]
+    labels: { memtest.lang: go, memtest.base: alpine }
+
+  go-ubuntu:
+    <<: *svc
+    build: { context: ./go, dockerfile: Dockerfile.ubuntu }
+    image: memtest/go-ubuntu
+    container_name: memtest-go-ubuntu
+    ports: ["8004:8080"]
+    labels: { memtest.lang: go, memtest.base: ubuntu }
+
+  python-alpine:
+    <<: *svc
+    build: { context: ./python, dockerfile: Dockerfile.alpine }
+    image: memtest/python-alpine
+    container_name: memtest-python-alpine
+    ports: ["8005:8080"]
+    labels: { memtest.lang: python, memtest.base: alpine }
+
+  python-ubuntu:
+    <<: *svc
+    build: { context: ./python, dockerfile: Dockerfile.ubuntu }
+    image: memtest/python-ubuntu
+    container_name: memtest-python-ubuntu
+    ports: ["8006:8080"]
+    labels: { memtest.lang: python, memtest.base: ubuntu }
+
+  typescript-alpine:
+    <<: *svc
+    build: { context: ./typescript, dockerfile: Dockerfile.alpine }
+    image: memtest/typescript-alpine
+    container_name: memtest-typescript-alpine
+    ports: ["8007:8080"]
+    labels: { memtest.lang: typescript, memtest.base: alpine }
+
+  typescript-ubuntu:
+    <<: *svc
+    build: { context: ./typescript, dockerfile: Dockerfile.ubuntu }
+    image: memtest/typescript-ubuntu
+    container_name: memtest-typescript-ubuntu
+    ports: ["8008:8080"]
+    labels: { memtest.lang: typescript, memtest.base: ubuntu }
+
+  csharp-alpine:
+    <<: *svc
+    build: { context: ./csharp, dockerfile: Dockerfile.alpine }
+    image: memtest/csharp-alpine
+    container_name: memtest-csharp-alpine
+    ports: ["8009:8080"]
+    labels: { memtest.lang: csharp, memtest.base: alpine }
+
+  csharp-ubuntu:
+    <<: *svc
+    build: { context: ./csharp, dockerfile: Dockerfile.ubuntu }
+    image: memtest/csharp-ubuntu
+    container_name: memtest-csharp-ubuntu
+    ports: ["8010:8080"]
+    labels: { memtest.lang: csharp, memtest.base: ubuntu }

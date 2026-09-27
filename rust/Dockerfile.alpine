@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1
+FROM rust:1.93-alpine3.22 AS build
+# musl-dev supplies libc.a, required to link the static musl target.
+# Retried: package mirrors are intermittently unreachable on some hosts.
+RUN ok=0; for i in 1 2 3 4 5; do apk add --no-cache musl-dev && { ok=1; break; }; sleep 3; done; [ "$ok" = 1 ]
+WORKDIR /src
+COPY Cargo.toml ./
+COPY src ./src
+RUN cargo build --release
+
+FROM alpine:3.22
+COPY --from=build /src/target/release/hello /usr/local/bin/hello
+ENV PORT=8080
+EXPOSE 8080
+USER 65534:65534
+ENTRYPOINT ["/usr/local/bin/hello"]

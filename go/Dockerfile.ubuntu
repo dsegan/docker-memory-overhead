@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1
+# CGO_ENABLED=0 makes this a static binary, so the *identical* build output
+# runs on both bases -- Go is the cleanest alpine-vs-ubuntu comparison here.
+FROM golang:1.26-alpine3.22 AS build
+WORKDIR /src
+COPY go.mod ./
+COPY main.go ./
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /hello .
+
+FROM ubuntu:26.04
+COPY --from=build /hello /usr/local/bin/hello
+ENV PORT=8080
+EXPOSE 8080
+USER 65534:65534
+ENTRYPOINT ["/usr/local/bin/hello"]
